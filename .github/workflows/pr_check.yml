@@ -1,7 +1,9 @@
-name: PR Check
+name: CI Tests 
 
 on:
   pull_request:
+    branches: [master, main]
+  push:
     branches: [master, main]
 
 jobs:
@@ -62,9 +64,41 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -v tests/ --cov=PYME --cov-report=xml
+          pytest -v tests/ --cov=PYME --cov-report=xml --junit-xml=test-results-${{ matrix.python-version }}.xml
         env:
           GITHUB_CI: "1"
+
+      # Upload with unique name per matrix job
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: test-results-${{ matrix.python-version }}.xml
+          retention-days: 30
+
+      # Only upload coverage from first matrix job
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: ${{ always() && strategy.job-index == 0 }}
+        with:
+          name: coverage
+          path: coverage.xml
+          retention-days: 30
+
+  # Merge all test results into single artifact
+  merge-test-results:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Merge test results
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
+          pattern: test-results-*
+          delete-merged: true
+          retention-days: 30
 
       # - name: Upload coverage to Codecov
       #   # Only upload from one Python version to avoid duplicate reports
