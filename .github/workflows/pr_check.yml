@@ -41,7 +41,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build libmvec-dev
 
       - name: Install build dependencies
         run: |
@@ -70,6 +70,10 @@ jobs:
           # --no-build-isolation reuses the build deps installed above.
           # --no-deps avoids pip trying to install wxpython at this stage.
           pip install --no-build-isolation --no-deps .
+        env:
+          # Disable Intel SVML to avoid undefined symbol issues
+          NPY_DISABLE_SVML: 1
+          CFLAGS: "-fno-vectorize"
 
       - name: Install test dependencies
         run: |
@@ -80,6 +84,8 @@ jobs:
           pytest -v tests/ --cov=PYME --cov-report=xml --junit-xml=test-results-${{ matrix.python-version }}.xml
         env:
           GITHUB_CI: "1"
+          # Workaround for SVML symbols
+          LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libmvec.so.1
 
       # Upload with unique name per matrix job
       - name: Upload test results
