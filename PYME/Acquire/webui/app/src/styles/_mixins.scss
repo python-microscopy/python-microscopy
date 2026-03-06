@@ -1,0 +1,72 @@
+@import './variables';
+
+// Button Mixin
+@mixin button-base {
+  padding: $btn-padding-md;
+  border: none;
+  border-radius: $border-radius;
+  cursor: pointer;
+  font-size: $font-md;
+  transition: background-color $transition-speed;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-variant($bg-color, $hover-color) {
+  @include button-base;
+  background-color: $bg-color;
+  color: $text-primary;
+  
+  &:hover:not(:disabled) {
+    background-color: $hover-color;
+  }
+}
+
+@mixin button-small {
+  padding: $btn-padding-sm;
+  font-size: $font-sm;
+}
+
+@mixin button-large {
+  padding: $btn-padding-lg;
+  font-size: $font-lg;
+}
+
+// Form Input Mixin
+@mixin form-input {
+  background-color: $darkest-bg;
+  color: $text-primary;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  padding: $input-padding-md;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+  }
+}
+
+// Section Container Mixin
+@mixin section-container {
+  background-color: $darker-bg;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+// Flexbox Utilities
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
