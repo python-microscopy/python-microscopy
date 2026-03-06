@@ -21,7 +21,7 @@
 #
 ################
 from .baseInterpolator import __interpolator
-from numpy import *
+import numpy as np
 from PYME.localization.cInterp import cInterp
 
 class LinearInterpolator(__interpolator):
@@ -29,7 +29,7 @@ class LinearInterpolator(__interpolator):
         """function which is called after model loading and can be
         overridden to allow for interpolation specific precomputations"""
          #compute the gradient of the PSF for interpolated jacobians
-        self.gradX, self.gradY, self.gradZ = gradient(self.interpModel)
+        self.gradX, self.gradY, self.gradZ = np.gradient(self.interpModel)
         self.gradX /= self.dx
         self.gradY /= self.dy
         self.gradZ /= self.dz
@@ -43,7 +43,7 @@ class LinearInterpolator(__interpolator):
 
         ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
-        oz = Z #[0]
+        oz = Z[0]
 
         #rx = (ox % self.dx)/self.dx
         #ry = (oy % self.dy)/self.dy
@@ -76,7 +76,7 @@ class LinearInterpolator(__interpolator):
 
         ox = X[0]
         oy = Y[0]
-        oz = Z #[0]
+        oz = Z[0]
 
         #rx = (ox % self.dx)/self.dx
         #ry = (oy % self.dy)/self.dy
@@ -104,9 +104,9 @@ class LinearInterpolator(__interpolator):
         """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
         vs = metadata.voxelsize_nm
-        X = vs.x*mgrid[xslice]
-        Y = vs.y*mgrid[yslice]
-        Z = array([0]).astype('f')
+        X = vs.x*np.mgrid[xslice]
+        Y = vs.y*np.mgrid[yslice]
+        Z = np.array([0]).astype('f')
         
         
 

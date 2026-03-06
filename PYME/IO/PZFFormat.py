@@ -65,12 +65,12 @@ def ChunkedHuffmanCompress(data, quantization=None):
     
     #comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
     
-    s = np.array([num_chunks], 'u2').tostring()
+    s = np.array([num_chunks], 'u2').tobytes()
     
     for j, r in enumerate(raw_chunks):
         c = comp_chunk_d[j]
-        s += np.array([len(c), len(r)], 'u4').tostring()
-        s += c.tostring()
+        s += np.array([len(c), len(r)], 'u4').tobytes()
+        s += c.tobytes()
         
     return s
 
@@ -84,20 +84,21 @@ def ChunkedHuffmanCompress_o(data):
     
     comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
     
-    s = np.array([num_chunks], 'u2').tostring()
+    s = np.array([num_chunks], 'u2').tobytes()
     
     for c, r in zip(comp_chunks, raw_chunks):
-        s += np.array([len(c), len(r)], 'u4').tostring()
-        s += c.tostring()
+        s += np.array([len(c), len(r)], 'u4').tobytes()
+        s += c.tobytes()
         
     return s
 
 def _chunkDecompress(args):
     chunk, length = args
-    return bcl.HuffmanDecompress(np.fromstring(chunk, 'u1'), length)
+    # .copy() to ensure the buffer isn't read-only
+    return bcl.HuffmanDecompress(np.frombuffer(chunk, 'u1').copy(), length)
     
 def ChunkedHuffmanDecompress(datastring):
-    num_chunks = np.fromstring(datastring[:2], 'u2')
+    num_chunks = np.frombuffer(datastring[:2], 'u2')
     
     #compPool = ThreadPool(NUM_COMP_THREADS)
     
@@ -105,7 +106,7 @@ def ChunkedHuffmanDecompress(datastring):
     
     comp_chunks = []
     for i in range(num_chunks):
-        chunk_len, raw_len = np.fromstring(datastring[sp:(sp+8)], 'u4')
+        chunk_len, raw_len = np.frombuffer(datastring[sp:(sp+8)], 'u4')
         sp += 8
         comp_chunks.append((datastring[sp:(sp+ chunk_len)], raw_len))
         sp += chunk_len
@@ -271,10 +272,10 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         header['DataCompression'] = DATA_COMP_HUFFCODE
 
         if quantization:
-            dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tostring()
+            dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tobytes()
         else:
             d2 = bcl.HuffmanCompress(d1)
-            dataString = d2.tostring()
+            dataString = d2.tobytes()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
@@ -282,16 +283,16 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     else:
         #print('saving raw')
         #print(header['DimOrder'][0])
-        dataString = d1.tostring(order=header['DimOrder'][0])
+        dataString = d1.tobytes(order=header['DimOrder'][0])
         
-    return header.tostring() + dataString
+    return header.tobytes() + dataString
  
 
 def load_header(datastring):
     if (_ord(datastring[2]) >= 3):
-        return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
+        return np.frombuffer(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
     else:
-        return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
+        return np.frombuffer(datastring[:HEADER_LENGTH], header_dtype)
 
    
 def loads(datastring):
@@ -327,17 +328,21 @@ def loads(datastring):
         
     w, h, d = header['Width'][0], header['Height'][0], header['Depth'][0]
 
-    if header['DataQuantization'] == DATA_QUANT_SQRT:
+    data_format = int(header['DataFormat'][0])
+    data_compression = int(header['DataCompression'][0])
+    data_quantization = int(header['DataQuantization'][0])
+
+    if data_quantization == DATA_QUANT_SQRT:
         #quantized data is always 8 bit
         outsize = w * h * d
     else:
-        outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
+        outsize = w*h*d*DATA_FMTS_SIZES[data_format]
     
     
     if header['Version'] < 3:
         data_offset = HEADER_LENGTH
     else:
-        data_offset = int(header['DataOffset'])
+        data_offset = int(header['DataOffset'][0])
         
     data_s = datastring[data_offset:]
 
@@ -346,20 +351,21 @@ def loads(datastring):
 
     #logging.debug('Compressed size: %s' % len(data_s))
     
-    if header['DataCompression'] == DATA_COMP_RAW:
+    if data_compression == DATA_COMP_RAW:
         #no need to decompress
-        data = np.fromstring(data_s, 'u1')
-    elif header['DataCompression'] == DATA_COMP_HUFFCODE:
+        data = np.frombuffer(data_s, 'u1')
+    elif data_compression == DATA_COMP_HUFFCODE:
         #logging.debug('Decompressing ...')
-        data = bcl.HuffmanDecompress(np.fromstring(data_s, 'u1'), outsize)
-    elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
+        # need to copy else buffer source will be read only
+        data = bcl.HuffmanDecompress(np.frombuffer(data_s, 'u1').copy(), outsize)
+    elif data_compression == DATA_COMP_HUFFCODE_CHUNKS:
         data = ChunkedHuffmanDecompress(data_s)
     else:
         raise RuntimeError('Compression type not understood')
 
     #logging.debug('Uncompressed shape: %s, %s, (%d, %d, %d)' % (data.shape, w * h * d, w, h, d))
         
-    if header['DataQuantization'] == DATA_QUANT_SQRT:
+    if data_quantization == DATA_QUANT_SQRT:
         #un-quantize data
         #logging.debug('Dequantizing')
         
@@ -367,9 +373,9 @@ def loads(datastring):
 
         data = data.astype('f')*header['QuantScale']
         #print('data dtype: %s' % data.dtype)
-        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[data_format])
     
     #print(dimOrder, [w, h, d])
-    data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
+    data = data.view(DATA_FMTS[data_format]).reshape([w,h,d], order=dimOrder)
     
     return data, header
