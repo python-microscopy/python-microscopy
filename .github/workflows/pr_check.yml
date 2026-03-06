@@ -73,7 +73,7 @@ jobs:
         env:
           # Disable Intel SVML to avoid undefined symbol issues
           NPY_DISABLE_SVML: 1
-          CFLAGS: "-fno-vectorize"
+          #CFLAGS: "-fno-vectorize"
 
       - name: Install test dependencies
         run: |
