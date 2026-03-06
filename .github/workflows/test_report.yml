@@ -1,0 +1,41 @@
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['CI Tests']                     # runs after CI workflow
+    types:
+      - completed
+permissions:
+  contents: read
+  actions: read
+  checks: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled'
+
+    steps:
+      - uses: dorny/test-reporter@v2
+        with:
+          artifact: test-results            # artifact name
+          name: Python Tests                  # Name of the check run which will be created
+          path: '*.xml'                     # Path to test results (inside artifact .zip)
+          reporter: java-junit              # Format of test results
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          # In workflow_run, we download from the specific run that triggered this
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@v1
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          # Crucial: Pull the PR number from the workflow_run event
+          issue-number: ${{ github.event.workflow_run.pull_requests[0].number }}
+          # This enables the "coverage of code touched by PR" view
+          report-only-changed-files: true
