@@ -49,18 +49,25 @@ def guess_install_type():
     # check for conda package
     try:
         pkg_info = json.loads(subprocess.check_output(['conda', 'list', '--json', 'python-microscopy']))
-    except FileNotFoundError:
+
+        chan = pkg_info[0]['channel']
+    
+        if chan == 'pypi':
+            logger.info('Detected a pip install')
+            return 'pip'
+        elif chan == 'david_baddeley':
+            logger.info('Detected a conda install')
+            return 'conda'
+        
+    except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
         logger.exception('Could not find `conda`\nPYME is not installed in a conda environment')
-        return 'unknown'
+
+        # TODO - can we check for a pip install here?
+        
+        
+    return 'unknown'
     
-    chan = pkg_info[0]['channel']
     
-    if chan == 'pypi':
-        logger.info('Detected a pip install')
-        return 'pip'
-    elif chan == 'david_baddeley':
-        logger.info('Detected a conda install')
-        return 'conda'
     
 
 def check_for_updates(gui=True, force=False):
