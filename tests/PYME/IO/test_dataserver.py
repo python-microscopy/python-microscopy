@@ -21,7 +21,13 @@ def setup_module():
     
     if os.path.exists(tmp_root):
         print('Removing existing temp spooler dir')
-        shutil.rmtree(tmp_root)
+        def chmod_readonly(func, path, _):
+            # test writes are read-only, and we need to 
+            # chmod them to writable before we can delete them
+            import stat
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        shutil.rmtree(tmp_root, onerror=chmod_readonly)
         
     os.makedirs(tmp_root)
     proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TES1', '-a', 'local'])
@@ -33,7 +39,8 @@ def setup_module():
     
 def teardown_module():
     global proc, tmp_root
-    proc.send_signal(signal.SIGINT)
+    sig = signal.SIGINT if sys.platform != 'win32' else signal.CTRL_BREAK_EVENT
+    proc.send_signal(sig)
     time.sleep(5)
     proc.kill()
     

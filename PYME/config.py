@@ -251,6 +251,7 @@ import os
 import shutil
 import sys
 import glob
+import importlib
 
 site_config_directory = '/etc/PYME'
 site_config_file = '/etc/PYME/config.yaml'
@@ -265,18 +266,27 @@ if not os.path.exists(user_config_dir):
     #if this is the first time we've called the module, make the config directory
     
     try:
+        import importlib.resources
+        
         os.makedirs(user_config_dir)
     
         #touch our config file
         open(user_config_file, 'a').close()
     
         #copy template configuration files
-        template_dir = os.path.join(os.path.split(__file__)[0], 'resources', 'config_template')
-    
-        conf_files = os.listdir(template_dir)
-    
-        for file in conf_files:
-            shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
+        try:
+            # Python 3.9+
+            template_files = importlib.resources.files('PYME.resources.config_template')
+        except AttributeError:
+            # Python 3.7-3.8 fallback
+            import importlib_resources
+            template_files = importlib_resources.files('PYME.resources.config_template')
+        
+        for file in template_files.iterdir():
+            if file.is_file():
+                dest_path = os.path.join(user_config_dir, file.name)
+                with open(dest_path, 'wb') as f:
+                    f.write(file.read_bytes())
     
         user_plugin_dir = os.path.join(user_config_dir, 'plugins')
         os.makedirs(user_plugin_dir)
@@ -348,7 +358,7 @@ def get(key, default=None):
     return config.get(key, default)
 
 import logging
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # def get_plugins(application):
@@ -392,7 +402,7 @@ logger.setLevel(logging.DEBUG)
 #     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
 
-report_template_dirs = {}
+report_template_paths = {}
 report_filters = {}
 
 # initialise to ensure that something is always defined (even if we have no plugins)
@@ -417,7 +427,11 @@ def _parse_plugin_config():
             try:
                 # TODO - do we actually want to do the import here, or should we defer it to get_plugin_template_dirs()?
                 # doing it here risks putting startup times for anything PYME related at the mercy of a badly written plugin
-                report_template_dirs[plugin_name] = os.path.dirname(importlib.import_module(plugin_conf['reports']['templates']).__file__)
+                #report_template_dirs[plugin_name] = os.path.dirname(importlib.import_module(plugin_conf['reports']['templates']).__file__)
+                # avoid using __file__ directly in case of frozen packages - just use the module path to get the directory
+                report_template_paths[plugin_name] = plugin_conf['reports']['templates']
+
+
             except KeyError:
                 pass
             except ImportError:
@@ -454,9 +468,9 @@ _parse_plugin_config()
 def get_plugin_report_filters():
     return report_filters.items()
 
-def get_plugin_template_dirs():
-    return report_template_dirs
-            
+def get_plugin_template_paths():
+    return report_template_paths.values()
+
 def get_plugins(application):
     """
     Get a list of plugins for a given application
