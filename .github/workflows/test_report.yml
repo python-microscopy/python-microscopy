@@ -35,6 +35,10 @@ jobs:
           # This action shows full error messages and stack traces
           report_individual_runs: true
           deduplicate_classes_by_file_name: false
+          # Key additions for workflow_run trigger:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: ${{ github.event_path }}
+          event_name: ${{ github.event.workflow_run.event }}
 
       - name: Download coverage artifact
         if: always()
