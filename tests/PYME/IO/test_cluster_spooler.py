@@ -38,8 +38,11 @@ def teardown_module():
         proc.kill()
         
     print('Killed all servers')
-    
-    shutil.rmtree(tmp_root)
+    def _wait_for_poll_exit(func, path, _):
+        # wait for the server process to exit and release the file lock before we try to delete the spooler dir
+        import time
+        time.sleep(1)
+    shutil.rmtree(tmp_root, onerror=_wait_for_poll_exit)
     
     
 
