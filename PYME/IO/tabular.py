@@ -54,7 +54,7 @@ def deprecated_name(name):
     
     return _dec
 
-class TabularBase(object):
+class _TabularBase(object):
     _image_bounds = False
 
     def toDataFrame(self, keys=None):
@@ -241,6 +241,46 @@ class TabularBase(object):
             self._image_bounds = self._calc_image_bounds()
 
         return self._image_bounds
+    
+    @property
+    def channel_names(self):
+        return []
+
+class _Channel(_TabularBase):
+    def __init__(self, table, channel_name, idx):
+        self._table = table
+        self._channel_names = [channel_name,]
+        self._idx = idx
+        
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        return self._table[key][self._idx][sl]
+    
+    def keys(self):
+        return list(self._table.keys())
+    
+class TabularBase(_TabularBase):
+    """Channel aware version of tabular base"""
+    _channel_column = 'channel_id'
+    
+    def get_channel_ds(self, channel_name):
+        chan_column = getattr(self, '_channel_column', None)
+        if chan_column is None or (not chan_column in self.keys()) or len(self.channel_names) <1:
+            raise RuntimeError('Data set has no channels')
+        
+        try:
+            ch_id = self.channel_names.index(channel_name)
+        except ValueError:
+            raise RuntimeError('Data does not have a "$s" channel' % channel_name)
+
+        return _Channel(self, channel_name, self[chan_column] == ch_id)
+    
+    @property
+    def channel_names(self):
+        return [k[2:] for k in self.keys() if k.startswith('p_')]
+    
+
 
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
