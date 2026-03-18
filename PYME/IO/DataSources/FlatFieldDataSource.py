@@ -34,6 +34,10 @@ class DataSource(XYTCDataSource):
         #self.h5File = tables.openFile(self.h5Filename)
         self.source = parentSource
         self.mdh = mdh
+        # Inherit channel configuration from the parent source so that multi-channel
+        # images are not mis-interpreted as single-channel z/t stacks.
+        self.sizeC = getattr(parentSource, 'sizeC', 1)
+        self.additionalDims = getattr(parentSource, 'additionalDims', 'T')
         #self.flat = flatfield
         
         try:
