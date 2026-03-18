@@ -1021,7 +1021,10 @@ class ExtractChannel(ModuleBase):
     channelToExtract = Int(0)
     
     def _pickChannel(self, image):
-        chan = image.data[:,:,:,self.channelToExtract]
+        c = self.channelToExtract
+        # Use data_xyztc (5D, X,Y,Z,T,C) with a slice (c:c+1) rather than an integer index
+        # so the channel axis is preserved, avoiding collapse to a 4D array and re-promotion ambiguity.
+        chan = image.data_xyztc[:,:,:,:,c:c+1]
         
         im = ImageStack(chan, titleStub = 'Filtered Image')
         im.mdh.copyEntriesFrom(image.mdh)
