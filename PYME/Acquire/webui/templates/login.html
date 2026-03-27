@@ -20,7 +20,6 @@ body {
   align-items: center;
   padding-top: 40px;
   padding-bottom: 40px;
-  #background-color: #b5b5b5;
 }
 
 .form-signin {
@@ -28,19 +27,19 @@ body {
   max-width: 330px;
   padding: 15px;
   margin: auto;
-    background-color: #f5f5f5;
- border-width: 1px;
-border-color: #9f9f9f;
-border-style: solid;
-
-        {% if reason  %}
-             border-width: 2px;
-
-    border-color: red;
-    background-color: #ffdfdf;
-        {% endif %}
-
+  background-color: #f5f5f5;
+  border-width: 1px;
+  border-color: #9f9f9f;
+  border-style: solid;
+  transition: border-color 0.3s, background-color 0.3s;
 }
+
+.form-signin.error {
+  border-width: 2px;
+  border-color: red;
+  background-color: #ffdfdf;
+}
+
 .form-signin .checkbox {
   font-weight: 400;
 }
@@ -64,21 +63,88 @@ border-style: solid;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
+
+.error-message {
+  display: none;
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.error-message.show {
+  display: block;
+}
     </style>
 </head>
 <body class="text-center">
 
-<form class="form-signin" action="/do_login">
+<form class="form-signin" id="loginForm">
     <h3 class="h3 mb-3 font-weight-normal">Sign in to PYMEAcquire</h3>
-    {% if reason %}
-        <p>Email or password not valid</p>
-    {% endif %}
+    <div id="errorMessage" class="error-message"></div>
     <label for="email" class="sr-only">Email:</label>
-    <input type="text" id="email" name="email" placeholder="Email address" class="form-control">
+    <input type="text" id="email" name="email" placeholder="Email address" class="form-control" required>
     <label for="password" class="sr-only">Password: </label>
-    <input type="password" id="password" name="password" placeholder="Password" class="form-control">
-    <input type="hidden" value="{{ on_success }}" id="on_success" name="on_success">
-    <button class="btn btn-lg btn-primary btn-block" type="submit" >Submit</button>
+    <input type="password" id="password" name="password" placeholder="Password" class="form-control" required>
+    <button class="btn btn-lg btn-primary btn-block" type="submit" id="submitBtn">Submit</button>
 </form>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const form = document.getElementById('loginForm');
+    
+    // Disable submit button during request
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+    
+    // Clear previous errors
+    errorMessage.classList.remove('show');
+    form.classList.remove('error');
+    
+    try {
+        const response = await fetch('/do_login?' + new URLSearchParams({
+            email: email,
+            password: password
+        }), {
+            method: 'GET'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Set the auth cookie
+            document.cookie = `auth=${data.token}; path=/; SameSite=Strict`;
+            
+            // Get redirect URL from query params or default to /
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect') || '/';
+            
+            // Redirect to main page
+            window.location.href = redirect;
+        } else {
+            // Show error
+            errorMessage.textContent = data.error || 'Email or password not valid';
+            errorMessage.classList.add('show');
+            form.classList.add('error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
+        }
+    } catch (error) {
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.add('show');
+        form.classList.add('error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+    }
+});
+</script>
 </body>
 </html>
