@@ -803,7 +803,7 @@ class ImageStack(object):
         logger.debug('file: {}'.format(filename))
         if len(obf.stacks) > 1 and stack_number is None and self.haveGUI:
                 import wx
-                options = ['%d: %s' % (ind, stack.name) for (ind, stack) in enumerate(obf.stacks)]
+                options = ['%d: %s (%dx%dx%d)' % (ind, stack.name, *stack.shape[0:3]) for (ind, stack) in enumerate(obf.stacks)]
                 
                 dlg = wx.SingleChoiceDialog(None, 'Stack', 'Select a stack', options)
                 if dlg.ShowModal() == wx.ID_OK:
