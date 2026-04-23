@@ -10,6 +10,8 @@ py_sources = files(
     'NikonTiGUI.py',
     'CameraSkeleton.py',
     'thorlabs_cam.py',
+    'thorlabs_elliptec.py',
+    'thorlabs_elliptec_serial.py',
     'NikonTi.py',
     'cobaltLaser.py',
     'thorlabsPiezo.py',
