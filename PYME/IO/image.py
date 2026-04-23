@@ -1077,7 +1077,93 @@ class ImageStack(object):
             self.mode = 'LM'
             
         
+    def _loadBioformatsBFF(self, filename):
+        """Load a file using the bffile package (bioformats via pims-bioformats-file).
+
+        bffile wraps Bio-Formats and exposes a lazy NumPy-compatible interface.
+        Dimensions are reported via OME metadata, and individual planes are read
+        on demand through ``LazyBioArray.__getitem__``.
+        """
+        from bffile import BioFile
+        from PYME.IO.DataSources import BioformatsBFFDataSource
+
+        series_num = 0
+        fn = filename
+
+        if '?' in filename:
+            fn, query = filename.split('?')
+            from urllib.parse import parse_qs
+            try:
+                series_num = int(parse_qs(query)['series'][0])
+            except KeyError:
+                pass
+        else:
+            # Check whether the file contains multiple series and ask the user
+            # to pick one when a GUI is available.
+            with BioFile(fn) as bf:
+                n_series = bf.series_count()
+                if n_series > 1:
+                    series_names = [
+                        img.name or 'Image {}'.format(i)
+                        for i, img in enumerate(bf.ome_metadata.images)
+                    ]
+                    print('BioformatsBFF: file has {} series, need to pick one.'.format(n_series))
+                    if self.haveGUI:
+                        import wx
+                        dlg = wx.SingleChoiceDialog(None, 'Series', 'Select a series', series_names)
+                        if dlg.ShowModal() == wx.ID_OK:
+                            series_num = dlg.GetSelection()
+                        dlg.Destroy()
+                    else:
+                        logger.warning('File has multiple series, no GUI available - using series 0.')
+
+        print('BioformatsBFF: loading data (series={})'.format(series_num))
+        self.dataSource = BioformatsBFFDataSource.DataSource(fn, series=series_num)
+
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+
+        print('BioformatsBFF: parsing OME metadata')
+        # Re-open briefly to retrieve the OME XML; the DataSource holds its own handle.
+        with BioFile(fn) as bf:
+            ome_xml = bf.ome_xml
+
+        if ome_xml:
+            OMEmd = MetaDataHandler.OMEXMLMDHandler(ome_xml.encode('utf8'))
+            self.mdh.copyEntriesFrom(OMEmd)
+
+        print('BioformatsBFF: done')
+
+        # Fix voxel sizes if the OME metadata did not contain physical pixel sizes.
+        if self.haveGUI and (
+            (self.mdh.getOrDefault('voxelsize.x', -1) < 0) or
+            (self.mdh.getOrDefault('voxelsize.y', -1) < 0)
+        ):
+            from PYME.DSView.voxSizeDialog import VoxSizeDialog
+            dlg = VoxSizeDialog(None)
+            dlg.ShowModal()
+            self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+            self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+            self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            dlg.Destroy()
+
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
+        self.SetData(self.dataSource)
+        self.seriesName = getRelFilename(fn)
+        self.mode = 'default'
+
     def _loadBioformats(self, filename):
+        # Prefer the bffile-based loader; fall back to the legacy javabridge/
+        # python-bioformats loader when bffile is not installed.
+        try:
+            import bffile  # noqa: F401 - only test availability here
+        except ImportError:
+            logger.debug('bffile not available, trying legacy python-bioformats')
+        else:
+            # If bffile is importable, use that code path and surface any
+            # downstream error directly rather than silently falling back.
+            self._loadBioformatsBFF(filename)
+            return
+
         try:
             import bioformats
         except ImportError:
@@ -1350,6 +1436,16 @@ class ImageStack(object):
                 try:
                     self._loadBioformats(filename)
                 except (ImportError, RuntimeError):
+                    # If bffile is installed, _loadBioformats() should have used
+                    # the bffile path. In that case, surface the original error
+                    # instead of masking it as a missing legacy bioformats install.
+                    try:
+                        import bffile  # noqa: F401
+                    except ImportError:
+                        pass
+                    else:
+                        raise
+
                     # We don't have bioformats - check to see if the file is in a format which we could also read
                     # natively (.tiff). Complains loudly about having to do this as by convention the .tiff extension
                     # is used to force bioformats loading of tiffs which we otherwise wouldn't understand.

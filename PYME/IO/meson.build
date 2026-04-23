@@ -44,6 +44,7 @@ py.install_sources(py_sources, subdir:'PYME/IO')
 subdir('FileUtils')
 py_sources = files(
     'DataSources/BioformatsDataSource.py',
+    'DataSources/BioformatsBFFDataSource.py',
     'DataSources/BaseDataSource.py',
     'DataSources/TiffDataSource.py',
     'DataSources/MultiviewDataSource.py',
