@@ -358,6 +358,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     pts = numpy.vstack(self.pixel_to_screen_coordinates(x, y)).T
                     dc.DrawSpline(pts.astype('i'))
             elif self.do.selection.width == 1:
+                lx, ly, hx, hy = self.do.GetSliceSelection()
+                lx, ly = self.pixel_to_screen_coordinates(lx, ly)
+                hx, hy = self.pixel_to_screen_coordinates(hx, hy)
                 dc.DrawLine(int(lx),int(ly),int( hx),int(hy))
             else:
                 lx, ly, hx, hy = self.do.GetSliceSelection()
