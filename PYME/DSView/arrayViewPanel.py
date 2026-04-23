@@ -765,7 +765,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.do.inOnChange = True
         try:
-            self.do.xp, self.do.yp, self.do.zp = [int(p) for p in pos_3d]
+            self.do.xp, self.do.yp, self.do.zp = [int(round(p)) for p in pos_3d]
         finally:
             self.do.inOnChange = False
             
@@ -793,11 +793,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = self._evt_pixel_coords(event)
         
         if (self.do.slice == self.do.SLICE_XY):
-            self.do.selection.start.x, self.do.selection.start.y = [int(p) for p in pos]
+            self.do.selection.start.x, self.do.selection.start.y = [int(round(p)) for p in pos]
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.selection.start.x, self.do.selection.start.z = [int(p) for p in pos]
+            self.do.selection.start.x, self.do.selection.start.z = [int(round(p)) for p in pos]
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.selection.start.y, self.do.selection.start.z = [int(p) for p in pos]
+            self.do.selection.start.y, self.do.selection.start.z = [int(round(p)) for p in pos]
             
         self.do.selection.trace = []
         self.do.selection.trace.append(tuple(pos))
@@ -814,11 +814,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = self._evt_pixel_coords(event)
         
         if (self.do.slice == self.do.SLICE_XY):
-            self.do.selection.finish.x, self.do.selection.finish.y = [int(p) for p in pos]
+            self.do.selection.finish.x, self.do.selection.finish.y = [int(round(p)) for p in pos]
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.selection.finish.x, self.do.selection.finish.z = [int(p) for p in pos]
+            self.do.selection.finish.x, self.do.selection.finish.z = [int(round(p)) for p in pos]
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.selection.finish.y, self.do.selection.finish.z = [int(p) for p in pos]
+            self.do.selection.finish.y, self.do.selection.finish.z = [int(round(p)) for p in pos]
 
 
         if event.ShiftDown(): #lock
