@@ -949,6 +949,12 @@ class OMEXMLMDHandler(XMLMDHandler):
                 self['OME.SizeC'] = int(pix.getAttribute('SizeC'))
                 
                 self['OME.DimensionOrder'] = pix.getAttribute('DimensionOrder')
+
+                # Extract channel names from <Channel Name="..."> elements
+                channels = pix.getElementsByTagName('Channel')
+                ch_names = [ch.getAttribute('Name') for ch in channels]
+                if any(ch_names):
+                    self['ChannelNames'] = ch_names
                     
                 #except:
                 #    pass
