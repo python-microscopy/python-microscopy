@@ -47,13 +47,20 @@ class DataSource(XYTCDataSource):
         self.stack = stack
         
     def getSlice(self, ind):
-        return self.stack.data[:,:,ind].squeeze()
+        if len(self.stack.data.shape) == 2:
+            assert(ind == 0)
+            return self.stack.data[:,:]
+        else:
+            return self.stack.data[:,:,ind].squeeze()
 
     def getSliceShape(self):
         return self.stack.data.shape[:2]
 
-    def getNumSlices(self):
-        return self.stack.data.shape[2]
+    def getNumSlices(self): # we allow for 2D
+        if len(self.stack.data.shape) > 2:
+            return self.stack.data.shape[2]
+        else:
+            return 1
 
     def getEvents(self):
         return []

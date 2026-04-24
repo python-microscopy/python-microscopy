@@ -803,7 +803,15 @@ class ImageStack(object):
         logger.debug('file: {}'.format(filename))
         if len(obf.stacks) > 1 and stack_number is None and self.haveGUI:
                 import wx
-                options = ['%d: %s (%dx%dx%d)' % (ind, stack.name, *stack.shape[0:3]) for (ind, stack) in enumerate(obf.stacks)]
+                options = []
+                # provide some dimension info on stacks if possible
+                for (ind, stack) in enumerate(obf.stacks):
+                    if len(stack.shape) >= 3:
+                        options.append('%d: %s (%dx%dx%d)' % (ind, stack.name, *stack.shape[0:3]))
+                    elif len(stack.shape) >= 2:
+                        options.append('%d: %s (%dx%d)' % (ind, stack.name, *stack.shape[0:2]))
+                    else:
+                        options.append('%d: %s' % (ind, stack.name))
                 
                 dlg = wx.SingleChoiceDialog(None, 'Stack', 'Select a stack', options)
                 if dlg.ShowModal() == wx.ID_OK:
@@ -821,7 +829,8 @@ class ImageStack(object):
             raise NotImplementedError('Scale factors other than 1 not yet supported for OBF metadata')
         self.mdh['voxelsize.x'] = voxel_sizes[0] / 1E-6 # [m -> um]
         self.mdh['voxelsize.y'] = voxel_sizes[1] / 1E-6 # [m -> um]
-        self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
+        if len(voxel_sizes) > 2:
+            self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
         
         
 
