@@ -69,6 +69,8 @@ class _DataSource(XYTCDataSource):
         return self.dataSource.reloadData()
 
 class DataSource(XYZTCDataSource):
+    """Lazy cropping datasource
+    """
     moduleName = 'CropDataSource'
 
     @classmethod
@@ -81,7 +83,7 @@ class DataSource(XYZTCDataSource):
             
             return slice(*range.indices(nmax))
 
-    def __init__(self,dataSource, xrange=None, yrange=None, zrange=None, trange=None):
+    def __init__(self,dataSource, xrange=None, yrange=None, zrange=None, trange=None, crange=None):
         #self.unmixer = unmixer
         self.dataSource = dataSource #type: XYZTCDataSource
 
@@ -98,9 +100,10 @@ class DataSource(XYZTCDataSource):
         self.yslice = self._sliceify(yrange, self.dataSource.shape[1])
         self.zslice = self._sliceify(zrange, self.dataSource.shape[2])
         self.tslice = self._sliceify(trange, self.dataSource.shape[3])
+        self.cslice = self._sliceify(crange, self.dataSource.shape[4])
         
         
-        szs = [int(np.floor((r.stop-r.start)/r.step)) for r in [self.xslice, self.yslice, self.zslice, self.tslice]] + [self.dataSource.shape[4],]
+        szs = [int(np.floor((r.stop-r.start)/r.step)) for r in [self.xslice, self.yslice, self.zslice, self.tslice, self.cslice]]
 
         self.set_dim_order_and_size(self.dataSource._input_order, szs[2], szs[3], szs[4])
         
@@ -115,8 +118,8 @@ class DataSource(XYZTCDataSource):
     
     def getSlice(self,ind):
         o_strides = np.array((self._z_stride, self._t_stride, self._c_stride))
-        i_strides = np.array((self._i_z_stride*self.zslice.step, self._i_t_stride*self.tslice.step, self._i_c_stride)).astype('i')
-        i_offsets = np.array((self.zslice.start, self.tslice.start, 0))
+        i_strides = np.array((self._i_z_stride*self.zslice.step, self._i_t_stride*self.tslice.step, self._i_c_stride*self.cslice.step)).astype('i')
+        i_offsets = np.array((self.zslice.start, self.tslice.start, self.cslice.start))
 
         stride_order = np.argsort(o_strides)
         #print(stride_order, o_strides, i_strides)
@@ -158,7 +161,7 @@ class DataSource(XYZTCDataSource):
         
 
 
-def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
+def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None, crange=None):
     from PYME.IO.image import ImageStack
     from PYME.IO.DataSources import ArrayDataSource
 
@@ -186,10 +189,10 @@ def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
         #  - use array slicing rather slice slicing
         # TODO - change CropDataSource to be chunk aware
         s = image.data_xyztc.shape
-        cp_a = image.data_xyztc[DataSource._sliceify(xrange, s[0]), DataSource._sliceify(yrange, s[1]), DataSource._sliceify(zrange, s[2]), DataSource._sliceify(trange, s[3]), :]
+        cp_a = image.data_xyztc[DataSource._sliceify(xrange, s[0]), DataSource._sliceify(yrange, s[1]), DataSource._sliceify(zrange, s[2]), DataSource._sliceify(trange, s[3]), DataSource._sliceify(crange, s[4])]
         cropped = ArrayDataSource.XYZTCArrayDataSource(cp_a)
     else:
-        cropped = DataSource(image.data_xyztc, xrange=xrange, yrange=yrange, zrange=zrange, trange=trange)
+        cropped = DataSource(image.data_xyztc, xrange=xrange, yrange=yrange, zrange=zrange, trange=trange, crange=crange)
     
     im = ImageStack(cropped, titleStub='Cropped Image')
     im.mdh.copyEntriesFrom(image.mdh)

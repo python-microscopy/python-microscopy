@@ -1021,17 +1021,13 @@ class ExtractChannel(ModuleBase):
     channelToExtract = Int(0)
     
     def _pickChannel(self, image):
-        chan = image.data[:,:,:,self.channelToExtract]
-        
-        im = ImageStack(chan, titleStub = 'Filtered Image')
-        im.mdh.copyEntriesFrom(image.mdh)
+        from PYME.IO.DataSources.CropDataSource import crop_image
+        c = self.channelToExtract
+        im = crop_image(image, crange=(c, c+1))
         try:
-            im.mdh['ChannelNames'] = [image.names[self.channelToExtract],]
+            im.mdh['ChannelNames'] = [image.names[c],]
         except (KeyError, AttributeError):
-            logger.warn("Error setting channel name")
-
-        im.mdh['Parent'] = image.filename
-        
+            logger.warning("Error setting channel name")
         return im
     
     #def execute(self, namespace):
