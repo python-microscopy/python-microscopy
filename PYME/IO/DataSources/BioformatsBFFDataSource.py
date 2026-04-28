@@ -1,13 +1,13 @@
 
 import numpy as np
 from bffile import BioFile
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYZTCDataSource
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class DataSource(XYTCDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'BioformatsBFFDataSource'
 
     def __init__(self, filename, series=0):
@@ -28,7 +28,8 @@ class DataSource(XYTCDataSource):
         self.sizeT = pixels.size_t
         self.sizeC = pixels.size_c
 
-        self.additionalDims = 'TC'
+        XYZTCDataSource.__init__(self, input_order='XYZTC',
+                                 size_z=self.sizeZ, size_t=self.sizeT, size_c=self.sizeC)
 
     def _tczyxs_index(self, t, c, z):
         """Build an index tuple for the lazy array, skipping squeezed dimensions.
