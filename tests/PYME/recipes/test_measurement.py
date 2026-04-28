@@ -66,6 +66,56 @@ def test_ChunkedTravelingSalesman():
     ordered = recipe.execute()
     assert ordered.mdh['TravelingSalesperson.Distance'] < ordered.mdh['TravelingSalesperson.OriginalDistance']
 
+def test_DensityMapping_DetectPoints2D_and_FitPoints():
+    from PYME.recipes.measurement import DetectPoints2D, FitPoints
+    from PYME.recipes.localisations import DensityMapping
+    from PYME.IO.tabular import DictSource
+    from PYME.IO.MetaDataHandler import DictMDHandler
+    from PYME.recipes.tablefilters import Mapping
+    # generate gt points
+    n = 15
+    voxelsize_nm = 100
+    im_size = 256
+    # generate points, avoiding edges
+    x_px_gt = np.linspace(20, im_size - 20, n).astype('f')
+    y_px_gt = np.linspace(20, im_size - 20, n).astype('f')
+
+    res = DictSource({'x': x_px_gt *voxelsize_nm, 'y': y_px_gt * voxelsize_nm,
+                      'z': np.zeros_like(x_px_gt), 'tIndex': np.zeros_like(x_px_gt, dtype=int)})
+    res.mdh = DictMDHandler()
+    res.mdh['Camera.ROIWidth'] = im_size
+    res.mdh['Camera.ROIHeight'] = im_size
+    res.mdh['voxelsize.x'] = voxelsize_nm / 1e3  # nm -> um
+    res.mdh['voxelsize.y'] = voxelsize_nm / 1e3  # nm -> um
+    res.mdh['Camera.ReadNoise'] = 1.0  # e-
+    res.mdh['Camera.ElectronsPerCount'] = 1.0
+    res.mdh['Camera.NoiseFactor'] = 1.0
+    res.mdh['Camera.TrueEMGain'] = 1.0
+    res.mdh['Camera.ADOffset'] = 0
+
+    rendered = DensityMapping(renderingModule='Gaussian', xyBoundsMode='metadata',
+                              pixelSize=voxelsize_nm).apply_simple(res)
+    detected = DetectPoints2D(threshold=0.001).apply_simple(rendered)
+    assert len(detected) == n
+
+    # Note that DetectPoints2D returns [pixels] rather than [nm]
+    detected_nm = Mapping(mappings={
+        'voxelsize_nmx': '%f' % voxelsize_nm,
+        'voxelsize_nmy': '%f' % voxelsize_nm,
+        'x': 'x * voxelsize_nmx', 'y': 'y * voxelsize_nmy'
+        }).apply_simple(detected)
+
+    # now fit the points and check they are close to gt
+    fitted = FitPoints(fitModule='LatGaussFitFR', 
+                       roiHalfSize=5).apply_simple(inputImage=rendered, inputPositions=detected_nm)
+    
+    assert len(fitted) == n
+    # --> systematic 0.5 pixel shift
+    x_expected = (x_px_gt - 0.5) * voxelsize_nm
+    y_expected = (y_px_gt - 0.5) * voxelsize_nm
+    assert np.allclose(fitted['x'], x_expected, atol=0.1 * voxelsize_nm)
+    assert np.allclose(fitted['y'], y_expected, atol=0.1 * voxelsize_nm)
+
 
 if __name__ == '__main__':
     import time
