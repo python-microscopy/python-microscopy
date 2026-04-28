@@ -2006,7 +2006,7 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         else:
             dark = None
         
-        ffd = FlatFieldDataSource.DataSource(inputImage.data, inputImage.mdh, flatfield=flat, dark=dark)
+        ffd = FlatFieldDataSource.DataSource(inputImage.data_xyztc, inputImage.mdh, flatfield=flat, dark=dark)
 
         im = ImageStack(ffd, titleStub=self.outputName)
         #im.mdh.copyEntriesFrom(inputImage.mdh)
@@ -2879,7 +2879,7 @@ class RawADUToElectronsPerSecond(ModuleBase):
         from PYME.IO.DataSources import ElectronsPerSecondDataSource
         
         series_adu = input_name
-        epers_ds = ElectronsPerSecondDataSource.DataSource(series_adu.data, series_adu.mdh)
+        epers_ds = ElectronsPerSecondDataSource.DataSource(series_adu.data_xyztc, series_adu.mdh)
         series_epers = ImageStack(data=epers_ds, events=series_adu.events, mdh=DictMDHandler(series_adu.mdh))
         series_epers.mdh['Parent'] = series_adu.filename
         
