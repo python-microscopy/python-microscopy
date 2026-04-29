@@ -163,8 +163,8 @@ class SelectLargestLabel(Filter):
     
     def apply_filter(self, data, voxelsize):
         uni, counts = np.unique(data[data > 0], return_counts=True)
-        self.label = uni[np.argmax(counts)]
-        mask = (data == self.label)
+        label = uni[np.argmax(counts)]
+        mask = (data == label)
         return mask
 
     #def completeMetadata(self, im):
