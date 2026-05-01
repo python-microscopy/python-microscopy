@@ -363,7 +363,7 @@ class IntensityAtPoints(ModuleBase):
 
         return res
 
-
+@register_module('ExtractROIs')
 class ExtractROIs(ModuleBase):
     """
     Extract ROIs around input positions and return them as an ImageStack. Points

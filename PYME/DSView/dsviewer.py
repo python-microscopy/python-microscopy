@@ -405,9 +405,9 @@ def OSXActivateKludge():
     import os 
     subprocess.Popen(['osascript', '-e', """\
         tell application "System Events"
-          set procName to name of first process whose unix id is %s
+          set proc to first process whose unix id is %s
+          set frontmost of proc to true
         end tell
-        tell application procName to activate
     """ % os.getpid()])
 
 class MyApp(wx.App):

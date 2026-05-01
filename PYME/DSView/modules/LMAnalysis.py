@@ -594,6 +594,7 @@ class LMAnalyser2(Plugin):
     def _update_points_overlay(self):
         ''' Make sure the points overlay is up to date with the current analysis progress'''
         mdh = self.analysisController.analysisMDH
+        roi_size = mdh.getOrDefault('Analysis.ROISize', 11)
 
         if not hasattr(self, '_ovl') or not hasattr(self._ovl, 'filter'):
             from PYME.DSView import overlays
@@ -601,9 +602,11 @@ class LMAnalyser2(Plugin):
             filt = tabular.FitResultsSource(self.fitResults)
             self._ovl = overlays.PointDisplayOverlay(filter=filt, md=mdh, display_name='Detections')
             self._ovl.pointMode = 'lm'
+            self._ovl.pointSize = roi_size * 2 + 1
             self.view.add_overlay(self._ovl)
         else:
             self._ovl.filter.setResults(self.fitResults)
+            self._ovl.pointSize = roi_size * 2 + 1
 
     def SetFitInfo(self):
         # TODO - use filter / raw fit results rather than creating a points array.
