@@ -803,16 +803,10 @@ class ImageStack(object):
         logger.debug('file: {}'.format(filename))
         if len(obf.stacks) > 1 and stack_number is None and self.haveGUI:
                 import wx
-                options = []
-                # provide some dimension info on stacks if possible
-                for (ind, stack) in enumerate(obf.stacks):
-                    if len(stack.shape) >= 3:
-                        options.append('%d: %s (%dx%dx%d)' % (ind, stack.name, *stack.shape[0:3]))
-                    elif len(stack.shape) >= 2:
-                        options.append('%d: %s (%dx%d)' % (ind, stack.name, *stack.shape[0:2]))
-                    else:
-                        options.append('%d: %s' % (ind, stack.name))
-                
+                def format_stack_info(ind, stack):
+                    return '%d: %s (shape %s)' % (ind, stack.name, stack.shape)
+                                                  
+                options = [format_stack_info(ind, stack) for (ind, stack) in enumerate(obf.stacks)]                
                 dlg = wx.SingleChoiceDialog(None, 'Stack', 'Select a stack', options)
                 if dlg.ShowModal() == wx.ID_OK:
                     stack_number = dlg.GetSelection()
