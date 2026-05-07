@@ -171,7 +171,7 @@ class __interpolator:
             self.IntYVals = vs.y*np.mgrid[-20:20]
             self.IntZVals = vs.z*np.mgrid[-20:20]
 
-            self.dx, self.dy, self.dx = vs
+            self.dx, self.dy, self.dz = vs
 
             P = np.arange(0,1.01,.01)
 
