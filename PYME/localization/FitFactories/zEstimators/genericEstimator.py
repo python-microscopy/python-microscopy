@@ -207,7 +207,7 @@ def getStartParameters(data, X, Y, Z=None):
     #print 'p:', p
     #print 'feat:', feat
     
-    z0 = _svr.predict(np.array(feat).reshape(1, -1))
+    z0 = float(_svr.predict(np.array(feat).reshape(1, -1))[0])
     z0 = -max(min(z0, 800), -800)
     #print z0
 
