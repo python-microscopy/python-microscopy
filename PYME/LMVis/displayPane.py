@@ -417,13 +417,20 @@ class DisplayPaneHorizontal(wx.Panel):
         chScaleBar.SetSelection(chInd)
         hsizer.Add(chScaleBar, 0, wx.RIGHT  | wx.ALIGN_CENTER_VERTICAL, 5)
 
+        #Scale bar color
+        hsizer.Add(wx.StaticText(self, -1, ''), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.sb_color_ctrl = wx.ColourPickerCtrl(self, colour=wx.WHITE, size=(40, -1))
+        self.sb_color_ctrl.Bind(wx.EVT_COLOURPICKER_CHANGED, self.OnScaleBarColorChanged)
+        hsizer.Add(self.sb_color_ctrl, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+
         hsizer.AddSpacer(10)
 
         #Background colour
 
         hsizer.Add(wx.StaticText(self, -1, 'BG Colour: '), 0, wx.LEFT  | wx.ALIGN_CENTER_VERTICAL,5)
 
-        colour_ctrl = wx.ColourPickerCtrl(self)
+        colour_ctrl = wx.ColourPickerCtrl(self, size=(40, -1))
         colour_ctrl.Bind(wx.EVT_COLOURPICKER_CHANGED, self.OnColourChanged)
         hsizer.Add(colour_ctrl, 0, wx.RIGHT  | wx.ALIGN_CENTER_VERTICAL, 5)
         
@@ -433,6 +440,12 @@ class DisplayPaneHorizontal(wx.Panel):
         
         chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
         
+    def OnScaleBarColorChanged(self, event):
+        if self.glCanvas.ScaleBarOverlayLayer is not None:
+            colour = event.GetColour()
+            self.glCanvas.ScaleBarOverlayLayer._color = [colour.Red()/255., colour.Green()/255., colour.Blue()/255.]
+            self.glCanvas.Refresh()
+
     def OnColourChanged(self, event):
         self.glCanvas.clear_colour = np.array(event.GetColour().Get(True))/255.
         self.glCanvas.Refresh()
