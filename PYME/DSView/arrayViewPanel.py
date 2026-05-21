@@ -21,7 +21,6 @@
 #
 ##################
 
-import warnings
 import wx
 
 from PYME.DSView import scrolledImagePanel
@@ -1027,7 +1026,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         """
         if not isinstance(ovl, overlays.Overlay):
-            warnings.warn('using old-style overlay function, please re-write as a class', DeprecationWarning)
+            logger.warning('using old-style overlay function, please re-write %s as a class', getattr(ovl, '__qualname__', ovl))
             ovl = overlays.FunctionOverlay(ovl, display_name)
         
         self.overlays.append(ovl)
