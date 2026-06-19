@@ -10,18 +10,18 @@ logger = logging.getLogger(__name__)
 class DataSource(XYZTCDataSource):
     moduleName = 'BioformatsBFFDataSource'
 
-    def __init__(self, filename, series=0):
+    def __init__(self, filename, taskQueue=None, series=0):
         self.filename = filename
-        self.series_num = series
+        self.series_num = 0 if series is None else series
 
         # Keep the file open for the lifetime of the DataSource so the lazy
         # array can read
         self._bf = BioFile(filename)
         self._bf.open()
-        self._arr = self._bf.as_array(series=series)  # LazyBioArray (T,C,Z,Y,X), squeezed
+        self._arr = self._bf.as_array(series=self.series_num)  # LazyBioArray (T,C,Z,Y,X), squeezed
 
         # Use OME metadata for dimension sizes (avoids squeezing ambiguity)
-        pixels = self._bf.ome_metadata.images[series].pixels
+        pixels = self._bf.ome_metadata.images[self.series_num].pixels
         self.sizeX = pixels.size_x
         self.sizeY = pixels.size_y
         self.sizeZ = pixels.size_z
