@@ -190,7 +190,7 @@ class LUTOverlayLayer(OverlayLayer):
         if self._texture_id is None:
             self._texture_id = glGenTextures(1)
     
-            image = np.linspace(0, 1, 255).reshape([1, 255]).astype('f')# image.T.reshape(*image.shape) #get our byte order right
+            image = np.linspace(1, 0, 255).reshape([1, 255]).astype('f')# image.T.reshape(*image.shape) #get our byte order right
     
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id)
