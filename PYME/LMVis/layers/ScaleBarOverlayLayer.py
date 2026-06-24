@@ -93,5 +93,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
                 self._bind_data('scalebar', self._verts, 0*self._verts, self._cols, sp, core_profile=core_profile)
 
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)  # standard blending so dark can be visible on light background
+                # Should we just disable blend instead? or should we make all layers disable blend on exit (and be responsible for enabling it on entry if needed?)
                 glDrawArrays(GL_TRIANGLES, 0, 6)
 
