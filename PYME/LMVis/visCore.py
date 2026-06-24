@@ -889,7 +889,8 @@ class VisGUICore(object):
                                    #nameUtils.genResultDirectoryPath(), 
                                    extension='.pvs')
         if not filename == '':
-            self.save_session(filename)
+            from pathlib import Path
+            self.save_session(Path(filename).with_suffix('.pvs'))
     
     def load_session(self, filename):
         import yaml
