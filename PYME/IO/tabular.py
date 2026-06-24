@@ -45,7 +45,7 @@ def deprecated_name(name):
     def _dec(cls):
         
         def _dep_name(*args, **kwargs):
-            warnings.warn(VisibleDeprecationWarning('%s is deprecated, use %s instead' % (name, cls.__name__)))
+            warnings.warn('%s is deprecated, use %s instead' % (name, cls.__name__), DeprecationWarning)
             return cls(*args, **kwargs)
         
         globals()[name] = _dep_name
@@ -1032,7 +1032,7 @@ class MappingFilter(TabularBase):
         """
         
         if not isinstance(resultsSource, TabularBase):
-            warnings.warn(VisibleDeprecationWarning('Mapping filter created with something that is not a tabular object. This will be unsupported in a future release. Consider DictSource or ColumnSource instead'))
+            warnings.warn('Mapping filter created with something that is not a tabular object. This will be unsupported in a future release. Consider DictSource or ColumnSource instead', DeprecationWarning)
 
         self._modifies_bounds = kwargs.pop('modifies_bounds', False)
         

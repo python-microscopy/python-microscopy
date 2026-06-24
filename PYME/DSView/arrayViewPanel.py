@@ -1027,7 +1027,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         """
         if not isinstance(ovl, overlays.Overlay):
-            warnings.warn(numpy.VisibleDeprecationWarning('using old-style overlay function, please re-write as a class'))
+            warnings.warn(f'using old-style overlay function, please re-write {getattr(ovl, "__qualname__", ovl)} as a class',
+                          DeprecationWarning, stacklevel=2)
             ovl = overlays.FunctionOverlay(ovl, display_name)
         
         self.overlays.append(ovl)
