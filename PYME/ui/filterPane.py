@@ -85,11 +85,7 @@ class FilterPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.OnFilterDelete, id=self.ID_FILT_DELETE)
             self.Bind(wx.EVT_MENU, self.OnFilterEdit, id=self.ID_FILT_EDIT)
 
-        # for wxMSW
-        self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
-
-        # for wxGTK
-        self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
+        self.lFiltKeys.Bind(wx.EVT_CONTEXT_MENU, self.OnFilterListRightClick)
 
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
@@ -127,8 +123,8 @@ class FilterPanel(wx.Panel):
 
     def OnFilterListRightClick(self, event):
 
-        x = event.GetX()
-        y = event.GetY()
+        pt = self.lFiltKeys.ScreenToClient(event.GetPosition())
+        x, y = pt.x, pt.y
 
         item, flags = self.lFiltKeys.HitTest((x, y))
 
