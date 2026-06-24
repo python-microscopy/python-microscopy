@@ -22,18 +22,28 @@
 ##################
 
 #from PYME.IO.FileUtils.nameUtils import getFullFilename
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYZTCDataSource, XYZTCWrapper
 #import tables
 from PYME.localization.remFitBuf import CameraInfoManager
 import numpy as np
 
-class DataSource(XYTCDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'FlatFieldDataSource'
     def __init__(self, parentSource, mdh, flatfield=None, dark = None):
         #self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
         #self.h5File = tables.openFile(self.h5Filename)
+
+        # Promote legacy XYTCDataSource inputs to XYZTC so we can inherit from XYZTCDataSource.
+        if not isinstance(parentSource, XYZTCDataSource):
+            parentSource = XYZTCWrapper.auto_promote(parentSource)
+
         self.source = parentSource
         self.mdh = mdh
+
+        # Initialise XYZTCDataSource using the (promoted) parent's dimension layout.
+        size_z, size_t, size_c = parentSource._sizes
+        XYZTCDataSource.__init__(self, input_order=parentSource._input_order,
+                                 size_z=size_z, size_t=size_t, size_c=size_c)
         #self.flat = flatfield
         
         try:
