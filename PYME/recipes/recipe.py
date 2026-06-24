@@ -905,7 +905,7 @@ class Recipe(HasTraits):
             if query:
                 filename = filename + '?' + query #reconstruct the filename with the query string as this is processed by some imaghe types
             im = ImageStack(filename=filename, haveGUI=False)
-            if im.mdh.get('voxelize.x', None) is None:
+            if im.mdh.get('voxelsize.x', None) is None:
                 logger.error('No voxelsize metadata found for image %s, using defaults' % filename)
             im.mdh.mergeEntriesFrom(metadata_defaults)
             self.namespace[key] = im
