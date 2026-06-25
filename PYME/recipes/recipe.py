@@ -31,6 +31,29 @@ class RecipeExecutionError(RecipeError):
     def __reduce__(self):
         return self.__class__, self.args
 
+class NamespaceDict(dict):
+    def __getitem__(self, key):
+        parts = key.split('.')
+
+        if len(parts) == 2:
+            key, channel = parts
+
+            return super().__getitem__(key).get_channel_ds(channel)
+        else:
+            return super().__getitem__(key)
+        
+    def __setitem__(self, key, value):
+        if '.' in key:
+            raise KeyError('Invalid key %s - namespace keys must not include "."' % key)
+        
+        return super().__setitem__(key, value)
+        
+    # def __getattr__(self, key):
+    #     try:
+    #         return self.__getitem__(key)
+    #     except KeyError:
+    #         raise AttributeError('No attribute %s' % key)
+        
 class Recipe(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
@@ -38,7 +61,7 @@ class Recipe(HasTraits):
     def __init__(self, *args, **kwargs):
         HasTraits.__init__(self, *args, **kwargs)
         
-        self.namespace = {}
+        self.namespace = NamespaceDict() #{}
         
         # we open hdf files and don't necessarily read their contents into memory - these need to be closed when we
         # either delete the recipe, or clear the namespace
