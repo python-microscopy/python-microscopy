@@ -137,3 +137,44 @@ def test_simple_distance_to_image_mask():
 
     distances = coordinate_tools.distance_to_image_mask(mask, points)
     np.testing.assert_array_equal(distances, np.arange(size) - 0.5 * size)
+
+def test_unit_quaternion_to_rotation_matrix():
+    mat = coordinate_tools.unit_quaternion_to_rotation_matrix(np.array([0,0,0,0]))
+    np.testing.assert_array_equal(mat, np.zeros((3,3)))
+    mat = coordinate_tools.unit_quaternion_to_rotation_matrix(np.array([1,0,0,0]))
+    np.testing.assert_array_equal(mat, np.eye(3))
+    mat = coordinate_tools.unit_quaternion_to_rotation_matrix(np.array([0,1,0,0]))
+    np.testing.assert_array_equal(mat, np.diag([1,-1,-1]))
+    mat = coordinate_tools.unit_quaternion_to_rotation_matrix(np.array([0,0,1,0]))
+    np.testing.assert_array_equal(mat, np.diag([-1,1,-1]))
+    mat = coordinate_tools.unit_quaternion_to_rotation_matrix(np.array([0,0,0,1]))
+    np.testing.assert_array_equal(mat, np.diag([-1,-1,1]))
+
+def test_absolute_orientation():
+    from PYME.simulation import locify
+    def round_box(p, w, r):
+        w = np.array(w)
+        q = np.abs(p) - w[:,None]
+        return np.linalg.norm(np.maximum(q,0.0),axis=0) + np.minimum(np.maximum(q[0,:],np.maximum(q[1,:],q[2,:])),0.0) - r
+    
+    shift = [0.5,0,0]
+    rot = np.pi/4
+    cube0 = locify.points_from_sdf(lambda x: round_box(x, [0.5,0.5,0.5], 0), r_max=1, centre=(0,0,0), dx_min=0.2, p=1.0)
+    cube1 = cube0.copy()
+    cube1 += np.array(shift)[:,None]
+    cube1 = np.dot(np.array([[np.cos(rot), 0, np.sin(rot)], [0, 1, 0], [-np.sin(rot), 0, np.cos(rot)]]), cube1)
+
+    target_rotm, rotm, shift, res = coordinate_tools.absolute_orientation(cube0, cube1)
+
+    np.testing.assert_allclose(cube0, target_rotm)
+    assert res < 1e-6
+
+    weights_reference = np.random.rand(*cube0.shape)
+    weights_target = np.random.rand(*cube1.shape)
+
+    target_rotm, rotm, shift, res = coordinate_tools.absolute_orientation(cube0, 
+                                                                          cube1, 
+                                                                          weights_reference=weights_reference, 
+                                                                          weights_target=weights_target)
+    
+    np.testing.assert_array_less(np.abs(cube0-target_rotm), 1/weights_reference)
