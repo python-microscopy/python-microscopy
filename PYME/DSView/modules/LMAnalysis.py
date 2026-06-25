@@ -828,7 +828,8 @@ class LMAnalyser2(Plugin):
 
 
     def update(self, dsviewer):
-        if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
+        playback_running = getattr(self.dsviewer, 'playbackpanel', None) is not None and self.dsviewer.playbackpanel.playback_running
+        if 'fitInf' in dir(self) and not playback_running:
             if self.do.ds.shape[3] > 1:
                 # stack is a time series
                 idx = self.do.tp
