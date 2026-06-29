@@ -168,12 +168,12 @@ class GaussianFitFactory(FFBase.FitFactory):
         fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
         
         if fitBackground:
-            startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
+            startParameters = [A, x0, y0, self.metadata['Analysis.SigmaGuess'], dataMean.min(), .001, .001]
     
             #do the fit
             (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
         else:
-            startParameters = [A, x0, y0, 250 / 2.35]
+            startParameters = [A, x0, y0, self.metadata['Analysis.SigmaGuess']]
     
             #do the fit
             (res, cov_x, infodict, mesg, resCode) = self.solver(f_gauss2d_no_bg, startParameters, dataMean, sigma, X, Y)
@@ -212,7 +212,7 @@ import PYME.localization.MetaDataEdit as mde
 
 PARAMETERS = [
     mde.IntParam('Analysis.ROISize', u'ROI half size', 5),
-
+    mde.FloatParam('Analysis.SigmaGuess', u'Initial guess for Gaussian sigma (nm)', 250/2.35),
 ]
 
 DESCRIPTION = 'Vanilla 2D Gaussian fit.'
