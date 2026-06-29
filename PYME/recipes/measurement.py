@@ -232,7 +232,7 @@ class FitPoints(ModuleBase):
 
             # remove any parameters which don't belong to the selected fit factory
             pnames = [p.paramName for p in params]
-            for k in self.parameters.keys():
+            for k in list(self.parameters.keys()):
                 if not k in pnames:
                     self.parameters.pop(k)
 
