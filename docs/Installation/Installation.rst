@@ -42,7 +42,7 @@ For development installs, after creating and activating a conda environment as a
 
       git clone https://github.com/python-microscopy/python-microscopy.git
       cd python-microscopy
-      pip install build meson meson-python ninja cython
+      pip install build meson meson-python ninja cython numpy
       pip install --no-build-isolation -e .
 
 You may alternatively fork the repository and clone your fork (e.g. `git clone https://github.com/yourusername/python-microscopy.git`).
