@@ -53,7 +53,7 @@ To rebuild after making changes, run
       pip install --no-deps --no-build-isolation --editable . 
 
 
-** NOTE: ** everything below this line is out of date, and will be revisited once we have the 
+**NOTE:** everything below this line is out of date, and will be revisited once we have the 
 conda packages and executable installers working again.
 
 Executable installers (Windows and Mac)
