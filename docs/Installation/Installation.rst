@@ -40,11 +40,12 @@ For development installs, after creating and activating a conda environment as a
 
 .. code-block:: bash
 
-      git clone https://github.com/yourusername/python-microscopy.git
+      git clone https://github.com/python-microscopy/python-microscopy.git
       cd python-microscopy
-      pip install build meson meson-python ninja cython
+      pip install build meson meson-python ninja cython numpy
       pip install --no-build-isolation -e .
 
+You may alternatively fork the repository and clone your fork (e.g. ``git clone https://github.com/yourusername/python-microscopy.git``).
 To rebuild after making changes, run
 
 .. code-block:: bash
@@ -52,7 +53,7 @@ To rebuild after making changes, run
       pip install --no-deps --no-build-isolation --editable . 
 
 
-** NOTE: ** everything below this line is out of date, and will be revisited once we have the 
+**NOTE:** everything below this line is out of date, and will be revisited once we have the 
 conda packages and executable installers working again.
 
 Executable installers (Windows and Mac)
