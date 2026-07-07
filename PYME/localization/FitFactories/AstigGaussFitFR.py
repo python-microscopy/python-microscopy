@@ -119,8 +119,8 @@ class GaussianFitFactory(FFBase.FitFactory):
         y0 =  vs.y*y
         
         bgm = np.mean(background)
-
-        startParameters = [A, x0, y0, 250/2.35, 250/2.35, dataMean.min(), .001, .001]
+        sigma_guess = self.metadata.getOrDefault('Analysis.PSFSigmaGuess', 250/2.35)
+        startParameters = [A, x0, y0, sigma_guess, sigma_guess, dataMean.min(), .001, .001]
 
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
@@ -167,7 +167,7 @@ import PYME.localization.MetaDataEdit as mde
 
 PARAMETERS = [
     mde.IntParam('Analysis.ROISize', u'ROI half size', 7),
-
+    mde.FloatParam('Analysis.PSFSigmaGuess', u'Initial guess for Gaussian sigma (nm)', 250/2.35),
 ]
 
 DESCRIPTION = 'Vanilla 2D Gaussian fit.'

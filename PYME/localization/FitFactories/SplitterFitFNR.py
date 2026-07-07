@@ -239,10 +239,11 @@ class GaussianFitFactory(FFBase.FFBase):
         y0 =  Yg.mean()
 
         fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+        sigma_guess = self.metadata.getOrDefault('Analysis.PSFSigmaGuess', 250/2.35)
         if fitBackground:
-            startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35, 0, 0])
+            startParameters = numpy.array([Ag, Ar, x0, y0, sigma_guess, 0, 0])
         else:
-            startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
+            startParameters = numpy.array([Ag, Ar, x0, y0, sigma_guess])
         
         dataROI = np.maximum(dataROI - bgROI, -sigma)
         
@@ -305,6 +306,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
               mde.IntParam('Analysis.ROISize', u'ROI half size', 5),
+              mde.FloatParam('Analysis.PSFSigmaGuess', u'Initial guess for Gaussian sigma (nm)', 250/2.35),
               ]
               
 DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts).'
