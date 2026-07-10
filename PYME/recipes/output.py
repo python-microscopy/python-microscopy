@@ -86,13 +86,13 @@ class CSVOutput(OutputModule):
 
         if self.scheme == 'pyme-cluster:// - aggregate':
             from PYME.IO import clusterResults
-            clusterResults.fileResults('pyme-cluster://_aggregate_csv/' + out_filename.lstrip('/'), v.toDataFrame())
+            clusterResults.fileResults('pyme-cluster://_aggregate_csv/' + out_filename.lstrip('/'), v.to_pandas())
         else:
             out_filename = self._schemafy_filename(out_filename)
             _ensure_output_directory(out_filename)
             
             if not isinstance(v, pd.DataFrame):
-                v = v.toDataFrame()
+                v = v.to_pandas()
                 
             v.to_csv(out_filename)
 
@@ -152,7 +152,7 @@ class XLSOutput(OutputModule):
         _ensure_output_directory(out_filename)
         
         v = namespace[self.inputName]
-        v.toDataFrame.to_excel(out_filename)
+        v.to_pandas.to_excel(out_filename)
 
 @register_module('ImageOutput')
 class ImageOutput(OutputModule):
