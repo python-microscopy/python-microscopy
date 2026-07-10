@@ -59,7 +59,7 @@ class TabularBase(object):
 
     def toDataFrame(self, keys=None):
         warnings.warn('toDataFrame is deprecated, use to_pandas instead', DeprecationWarning)
-        self.to_pandas(keys)
+        return self.to_pandas(keys)
 
     def to_pandas(self, keys=None):
         """
