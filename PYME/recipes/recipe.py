@@ -802,7 +802,7 @@ class Recipe(HasTraits):
         self.namespace.update({key_prefix + k: v for k, v in tables.items()})
 
     
-    def load_inputs(self, inputs, metadata_defaults={}, raise_on_error=True):
+    def load_inputs(self, inputs, metadata_defaults={}, raise_on_error=True, haveGUI=False):
         """
         load inputs from a dictionary mapping keys to filenames
         """
@@ -814,14 +814,14 @@ class Recipe(HasTraits):
                 continue
 
             try:
-                self._load_input(v, key=k, metadata_defaults=metadata_defaults, cache=cache)
+                self._load_input(v, key=k, metadata_defaults=metadata_defaults, cache=cache, haveGUI=haveGUI)
             except Exception as e:
                 if raise_on_error:
                     raise RecipeError('Error loading input %s from %s' % (k, v)) from e
                 else:
                     logger.exception('Error loading input %s from %s' % (k, v))
     
-    def _load_input(self, filename, key='input', metadata_defaults={}, cache={}, default_to_image=True, args={}):
+    def _load_input(self, filename, key='input', metadata_defaults={}, cache={}, default_to_image=True, args={}, haveGUI=False):
         """
         Load input data from a file and inject into namespace
         """
@@ -904,7 +904,7 @@ class Recipe(HasTraits):
         else: # assume it's an image
             if query:
                 filename = filename + '?' + query #reconstruct the filename with the query string as this is processed by some imaghe types
-            im = ImageStack(filename=filename, haveGUI=False)
+            im = ImageStack(filename=filename, haveGUI=haveGUI)
             if im.mdh.get('voxelsize.x', None) is None:
                 logger.error('No voxelsize metadata found for image %s, using defaults' % filename)
             im.mdh.mergeEntriesFrom(metadata_defaults)

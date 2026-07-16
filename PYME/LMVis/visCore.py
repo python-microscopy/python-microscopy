@@ -439,8 +439,9 @@ class VisGUICore(object):
         dsname = ask(self,message='provide short name for datasource')
         if dsname is None:
             return
-        self.pipeline.load_extra_datasources(**{dsname:filename})
-        
+        self.pipeline.load_extra_datasources(**{dsname:filename,'haveGUI':True}) # we pass through the haveGUI flag for some of the image datatypes
+        self.pipeline.Rebuild() # it seems to me one wants to rebuild, otherwise visgui does not seem to "know" about the new DS
+
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(),
