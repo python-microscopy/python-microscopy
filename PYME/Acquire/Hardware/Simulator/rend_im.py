@@ -115,7 +115,7 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
         for i in range(1, len(interpModel_by_chan)):
             interpModel_by_chan[i] = None
 
-        interpModel_by_chan[0] = np.maximum(im/im[:,:,int(len(IntZVals)/2)].sum(), 0) #normalise to 1 and clip
+        interpModel_by_chan[0] = np.maximum(im/im[:,:,int(len(IntZVals)/2)].sum(), 0).astype('f4') #normalise to 1 and clip
         
         
 def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np.pi/2], **kwargs):
@@ -139,7 +139,7 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
                                                                                                                   
             zm =  int(len(IntZVals)/2)
             norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
-            interpModel_by_chan[i] = np.maximum(im/norm, 0) #normalise to 1 and clip
+            interpModel_by_chan[i] = np.maximum(im/norm, 0).astype('f4') #normalise to 1 and clip
 
 def get_psf():
     from PYME.IO.image import ImageStack
@@ -170,7 +170,7 @@ def setModel(modName, md):
     dx, dy, dz = vs_nm
 
     #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
-    interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+    interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0).astype('f4') #normalise to 1 and clip
 
 def interp(X, Y, Z):
     X = np.atleast_1d(X)
@@ -390,13 +390,13 @@ def _rFluorSubset(im, fl, A, x0, y0, z, dx, dy, dz, maxz, ChanXOffsets=[0,], Cha
     if ChanSpecs is None:
         z_ = np.clip(z - fl['z'], -maxz, maxz).astype('f')
         roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
-        cInterp.InterpolateInplaceM(interpModel(), im, (fl['x'] - x0), (fl['y'] - y0), z_, A, roiSize,dx,dy,dz)
+        cInterp.InterpolateInplaceM(interpModel(), im, (fl['x'] - x0).astype('f4'), (fl['y'] - y0).astype('f4'), z_.astype('f4'), A.astype('f4'), roiSize,dx,dy,dz)
     else:
         for x_offset, z_offset, spec_chan, chan in zip(ChanXOffsets, ChanZOffsets, ChanSpecs, range(len(ChanSpecs))):
             z_ = np.clip(z - fl['z'] + z_offset, -maxz, maxz).astype('f')
             roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
-            cInterp.InterpolateInplaceM(interpModel(chan), im, (fl['x'] - x0 + x_offset), (fl['y'] - y0),
-                                        z_, A * fl['spec'][:, spec_chan], roiSize, dx, dy, dz)
+            cInterp.InterpolateInplaceM(interpModel(chan), im, (fl['x'] - x0 + x_offset).astype('f4'), (fl['y'] - y0).astype('f4'),
+                                        z_.astype('f4'), (A * fl['spec'][:, spec_chan]).astype('f4'), roiSize, dx, dy, dz)
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None, im=None):
