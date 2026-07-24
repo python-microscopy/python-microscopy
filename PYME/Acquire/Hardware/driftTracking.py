@@ -76,7 +76,7 @@ class StandardFrameSource(object):
     '''
     def __init__(self, frameWrangler):
         self._fw = frameWrangler
-        self._on_frame = dispatch.Signal(['frameData'])
+        self._on_frame = dispatch.Signal()
         self._fw.onFrameGroup.connect(self.tick)
 
 
@@ -105,7 +105,7 @@ class OIDICFrameSource(StandardFrameSource):
     def __init__(self, frameWrangler, oidic_controller, oidic_orientation=0):
         #super().__init__(frameWrangler)
         self._fw = frameWrangler
-        self._on_frame = dispatch.Signal(['frameData'])
+        self._on_frame = dispatch.Signal()
         
         # connect to onFrame rather than onFrameGroup so we get the
         # current frame which as opposed to an older one.
