@@ -336,7 +336,7 @@ class Deconvolver(Plugin):
             self.res.update()
             #self.res.Refresh()
             #self.res.do.Optimise()
-        if self.decT.isAlive():
+        if self.decT.is_alive():
             if not self.dlgDeconProg.Tick(self.dec):
                 self.decT.kill()
                 self.OnDeconEnd(False)
