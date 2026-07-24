@@ -25,8 +25,9 @@ import cherrypy
 
 from PYME.Analysis.graphing_filters import offline_plotting, movieplot, movieplot2
 
-from jinja2 import Environment, PackageLoader
-env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
+from jinja2 import Environment
+from PYME.resources import PackageResourceLoader
+env = Environment(loader=PackageResourceLoader('PYME.DSView.modules'))
 env.filters['movieplot'] = movieplot2
 
 
