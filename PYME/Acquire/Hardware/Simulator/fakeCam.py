@@ -413,6 +413,8 @@ class FakeCamera(Camera):
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
+        Camera.__init__(self)
+
     def setSplitterInfo(self, chan_z_offsets, chan_specs):
         self._chan_z_offsets = chan_z_offsets
         self._chan_specs = chan_specs
