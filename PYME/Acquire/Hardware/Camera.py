@@ -158,7 +158,7 @@ class Camera(object):
 
         # create flag for idle state, allowing different behavior between spooling
         self._idle = False
-        self.on_idle_change = dispatch.Signal(['idle'])
+        self.on_idle_change = dispatch.Signal()
 
     def Init(self):
         """

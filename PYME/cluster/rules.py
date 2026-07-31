@@ -115,7 +115,8 @@ class RuleWatcher(object):
             self._t_watch.start()
         
 import jinja2
-jenv = jinja2.Environment(loader=jinja2.PackageLoader('PYME.resources', 'web'))
+from PYME.resources import PackageResourceLoader
+jenv = jinja2.Environment(loader=PackageResourceLoader('PYME.resources', 'web'))
 rg_template = jenv.get_template('rule_inline.html')
 class RuleGroupWatcher(object):
     """ Single object / thread to watch multiple rules

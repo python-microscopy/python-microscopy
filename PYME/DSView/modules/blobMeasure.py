@@ -945,8 +945,9 @@ class Measurements(wx.Panel, Plugin):
         dc.SetBrush(wx.NullBrush)
         
     def index(self, templateName='measureView3.html'):
-        from jinja2 import Environment, PackageLoader
-        env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
+        from jinja2 import Environment
+        from PYME.resources import PackageResourceLoader
+        env = Environment(loader=PackageResourceLoader('PYME.DSView.modules'))
         
         #if self.dsviewer.image.data.shape[2] > 1:
             #3D image

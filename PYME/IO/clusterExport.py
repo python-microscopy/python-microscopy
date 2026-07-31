@@ -15,8 +15,8 @@ class ImageFrameSource(object):
     def __init__(self):
         #self.image = image
         
-        self.onFrame = dispatch.Signal(['frameData'])
-        self.spoolProgress = dispatch.Signal(['percent'])
+        self.onFrame = dispatch.Signal()
+        self.spoolProgress = dispatch.Signal()
         
     def spoolImageFromFile(self, filename):
         """Load an image file and then spool"""

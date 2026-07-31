@@ -413,6 +413,8 @@ class FakeCamera(Camera):
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
+        Camera.__init__(self)
+
     def setSplitterInfo(self, chan_z_offsets, chan_specs):
         self._chan_z_offsets = chan_z_offsets
         self._chan_specs = chan_specs
@@ -473,7 +475,7 @@ class FakeCamera(Camera):
         try:
             running = self.compT.aqRunning
             self.compT.kill = True
-            while self.compT.isAlive():
+            while self.compT.is_alive():
                 time.sleep(0.01)
                 
         except AttributeError:
@@ -501,8 +503,10 @@ class FakeCamera(Camera):
             pass
         
         self.compT.start()
+        if running:
+            self.compT.StartExp()
 
-        self.compT.aqRunning = running
+        #self.compT.aqRunning = running
         
     def GetROI(self):
         return self.ROIx[0], self.ROIy[0], self.ROIx[1], self.ROIy[1]

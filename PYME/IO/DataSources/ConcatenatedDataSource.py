@@ -4,7 +4,6 @@
 @author: zacsimile
 """
 import numpy as np
-from numpy.core.fromnumeric import searchsorted
 from .BaseDataSource import XYZTCDataSource
 
 class DataSource(XYZTCDataSource):

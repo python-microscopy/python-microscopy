@@ -10,8 +10,9 @@ import sys
 import glob
 import numpy as np
 
-from jinja2 import Environment, PackageLoader
-env = Environment(loader=PackageLoader('PYME.experimental.RandomPresent', 'templates'))
+from jinja2 import Environment
+from PYME.resources import PackageResourceLoader
+env = Environment(loader=PackageResourceLoader('PYME.experimental.RandomPresent'))
 
 class img(object):
     def __init__(self, fn):

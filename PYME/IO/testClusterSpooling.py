@@ -85,8 +85,8 @@ class TestSpooler:
         
 
         self.testData = (100*np.random.rand(*testFrameSize)).astype('uint16')
-        self.onFrame = dispatch.Signal(['frameData'])
-        self.spoolProgress = dispatch.Signal(['percent'])
+        self.onFrame = dispatch.Signal()
+        self.spoolProgress = dispatch.Signal()
 
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         self.serverfilter=serverfilter

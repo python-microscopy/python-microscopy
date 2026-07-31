@@ -634,7 +634,7 @@ class ImagePyramid(object):
             acc_ = np.zeros([self.tile_size, self.tile_size])
             occ_ = np.zeros([self.tile_size, self.tile_size])
         
-        if weights is 'auto':
+        if weights == 'auto':
             # note - we take advantage of the fact that strings are immutable constants to perform the above check
             # using is rather than risk an element-wise comparisson.
             xs, ys = frame_offset

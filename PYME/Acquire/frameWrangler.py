@@ -121,7 +121,7 @@ class FrameWrangler(object):
         #new style signals - these will replace the WantFrameNotification etc ...
         #which are currently being kept for backwards compatibility
         
-        self.onFrame = dispatch.Signal(['frameData']) #called each time a new frame appears in our buffer
+        self.onFrame = dispatch.Signal() #called each time a new frame appears in our buffer
         self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()

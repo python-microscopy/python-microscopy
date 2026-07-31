@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 #except ImportError:
 from PIL import Image
 import time
+from PYME.resources import PackageResourceLoader
 
 env = jinja2.Environment(
-    loader=jinja2.PackageLoader('PYME.tileviewer', 'templates'),
+    loader=PackageResourceLoader('PYME.tileviewer'),
     autoescape=jinja2.select_autoescape(['html', 'xml'])
 )
 

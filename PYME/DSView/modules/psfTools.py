@@ -26,8 +26,9 @@ import wx.grid
 import wx.lib.agw.aui as aui
 
 
-from jinja2 import Environment, PackageLoader
-env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
+from jinja2 import Environment
+from PYME.resources import PackageResourceLoader
+env = Environment(loader=PackageResourceLoader('PYME.DSView.modules'))
 
 from PYME.recipes.traits import HasTraits, Float, Int, Bool, Enum
 import numpy as np
