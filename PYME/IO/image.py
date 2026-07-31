@@ -813,8 +813,9 @@ class ImageStack(object):
         
         data = OBFDataSource.DataSource(obf, stack_number)
         self.SetData(data)
-        self.seriesName = getRelFilename(filename) + ': ' + data.stack.name
-        self.filename = self.seriesName
+        self.seriesName = filename + ("?stack=%d" % stack_number) # use the valid query syntax to get a unique name that we can actually load back
+        #self.filename = self.seriesName # self.filename is actually set in the calling code AFTER this function has been called, so effectively NOOP
+        #self.query = "stack=%d" % stack_number # we comment this out since we use the query syntax already to make a unique name for the stack in question
         logger.debug(self.filename)
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
         voxel_sizes = data.stack.pixel_sizes
@@ -825,7 +826,21 @@ class ImageStack(object):
         self.mdh['voxelsize.y'] = voxel_sizes[1] / 1E-6 # [m -> um]
         if len(voxel_sizes) > 2:
             self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
-        
+        # retrieve the offset info from the stack metadata; this is key to overlaying with MINFLUX localizations
+        # these should generally exist but just in case we wrap this in a try statement
+        try:
+            offsets = data.stack.offsets
+        except AttributeError:
+            pass
+        else:
+            self.mdh['Origin.x'] = 1e9*offsets[0] # convert to nm
+            self.mdh['Origin.y'] = 1e9*offsets[1] # convert to nm
+            if len(data.stack.shape)>2 and data.stack.shape[2]>1:
+                zsize = data.stack.shape[2]
+                origin_z = - 1e3*self.mdh['voxelsize.z'] * zsize/2 # so that center of stack will appear at ~0 in VisGUI
+            else:
+                origin_z = 0
+            self.mdh['Origin.z'] = origin_z
         
 
     def _findAndParseMetadata(self, filename):
@@ -1425,7 +1440,9 @@ class ImageStack(object):
                 self._loadOBF(filename)
                 # hack to get around self.filename = filename below, otherwise if we open multiple
                 # stacks from this same file we won't be able to make composite later
-                filename = self.seriesName
+                filename = self.seriesName 
+                # this hack uses the query syntax to make a unique series name peserves the saving and loading back of session files
+                # see also code in _loadOBF below
             elif os.path.splitext(filename)[1] in ['.tif', '.lsm']: #try tiff
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):

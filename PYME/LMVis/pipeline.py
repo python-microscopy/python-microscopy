@@ -934,7 +934,7 @@ class Pipeline(object):
         return charts
 
 
-    def load_extra_datasources(self, **kwargs):
+    def load_extra_datasources(self, haveGUI=False, **kwargs):
         ''' Load additional input data files into the pipeline.
         
        Takes keyword arguments with the following format:
@@ -944,7 +944,7 @@ class Pipeline(object):
        load_extra_datadources(fitResults='fitResults.mat', drift='drift.mat')        
        '''
         
-        self.recipe.load_inputs(kwargs)
+        self.recipe.load_inputs(kwargs, haveGUI=haveGUI)
 
         
     @property
