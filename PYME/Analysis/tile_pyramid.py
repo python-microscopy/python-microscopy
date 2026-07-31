@@ -118,7 +118,43 @@ class ClusterPZFTileCache(TileCache):
         
         s = clusterIO.get_file(filename)
         return PZFFormat.loads(s)[0].squeeze()
-    
+
+class ZarrBlobTileCache(TileCache):
+    """Saves tiles in a format which is binary-compatible with zarr chuncks, allowing Zarr to read the tiles directly.
+
+    Zarr chuncks are raw binary data without a header, but optionally with a codec appllied.
+
+    Parameters:
+    ----------
+    max_size : int
+        Maximum number of tiles to keep in memory before flushing to disk.
+    codec : numcodecs.abc.Codec, optional
+        Codec to use for compressing tile data.s
+    """
+    def __init__(self, max_size=1000, codec=None):
+        super().__init__(max_size=max_size)
+        self.codec = codec
+
+    def _save(self, filename, data):
+        dirname = os.path.split(filename)[0]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        if self.codec is not None:
+            data = self.codec.encode(data)
+
+        with open(filename, 'wb') as f:
+            f.write(data.tobytes())
+
+    def _load(self, filename):
+        with open(filename, 'rb') as f:
+            data = f.read()
+        
+        if self.codec is not None:
+            data = self.codec.decode(data)
+        
+        return data
+
 class TileIO(object):
     def get_tile(self, layer, x, y):
         raise NotImplementedError
@@ -138,18 +174,19 @@ class TileIO(object):
     def flush(self):
         pass
 
-class NumpyTileIO(TileIO):
-    def __init__(self, base_dir, suff='img'):
+class FileBackedTileIO(TileIO):
+    def __init__(self, base_dir, suff='img', ext='', tile_cache=TileCache, key_schema='{level:d}/{x:03d}/{x:03d}_{y:03d}_{suff}{ext}'):
         self.base_dir = base_dir
-        self.suff = suff + '.npy'
+        self.suff = suff
+        self.ext = ext
+
+        self.pattern = os.sep.join([self.base_dir, '/'.split(key_schema)])
         
-        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
-        
-        self._tilecache = TileCache()
+        self._tilecache = tile_cache()
         self._coords = {}
     
-    def _filename(self, layer, x, y):
-        return self.pattern % (layer, x, x, y)
+    def _filename(self, layer, x, y, z=0):
+        return self.pattern.format(level=layer, x=x, y=y, z=z, suff=self.suff, ext=self.ext)
         #return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
     
     def get_tile(self, layer, x, y):
@@ -193,15 +230,17 @@ class NumpyTileIO(TileIO):
     def flush(self):
         self._tilecache.flush()
 
-class PZFTileIO(NumpyTileIO):
-    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache):
-        self.base_dir = base_dir
-        self.suff = suff + '.pzf'
+class NumpyTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=TileCache, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.npy', tile_cache=tile_cache, **kwargs)
 
-        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
-    
-        self._tilecache = tile_cache()
-        self._coords = {}
+class PZFTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.pzf', tile_cache=tile_cache, **kwargs)
+
+class ZarrBlobTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=ZarrBlobTileCache, codec=None, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.zarr', tile_cache=lambda: tile_cache(codec=codec), **kwargs)
         
 class ClusterPZFTileIO(PZFTileIO):
     def __init__(self, base_dir, suff='img'):
@@ -334,6 +373,9 @@ class ImagePyramid(object):
             # used to support transitory pyramids. 
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
+
+        if mdh is None and os.path.exists(os.path.join(storage_directory, 'metadata.json')):
+            mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
             
         if unifiedIO.is_cluster_uri(storage_directory):
             assert (backend == ClusterPZFTileIO)
