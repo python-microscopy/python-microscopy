@@ -94,7 +94,7 @@ class CSVOutput(OutputModule):
             if not isinstance(v, pd.DataFrame):
                 v = v.to_pandas()
                 
-            v.to_csv(out_filename)
+            v.to_csv(out_filename, index=False)
 
 @register_module('XLSXOutput')
 class XLSOutput(OutputModule):
