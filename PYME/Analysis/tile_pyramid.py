@@ -369,7 +369,7 @@ class ImagePyramid(object):
     
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1, backend=None):
+                 pixel_size=1, backend=None, **backend_kwargs):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -447,10 +447,10 @@ class ImagePyramid(object):
 
         
 
-        self._imgs = backend(base_dir=self.base_dir, suff='img', key_schema=key_schema)
-        self._acc = backend(base_dir=self.base_dir, suff='acc', key_schema=key_schema)
-        self._occ = backend(base_dir=self.base_dir, suff='occ', key_schema=key_schema)
-    
+        self._imgs = backend(base_dir=self.base_dir, suff='img', key_schema=key_schema, **backend_kwargs)
+        self._acc = backend(base_dir=self.base_dir, suff='acc', key_schema=key_schema, **backend_kwargs)
+        self._occ = backend(base_dir=self.base_dir, suff='occ', key_schema=key_schema, **backend_kwargs)
+
     @classmethod
     def frame_weights(cls, frame_shape):
         k = tuple(frame_shape[:2])
