@@ -180,13 +180,16 @@ class FileBackedTileIO(TileIO):
         self.suff = suff
         self.ext = ext
 
-        self.pattern = os.sep.join([self.base_dir, '/'.split(key_schema)])
+        self.pattern = os.sep.join([self.base_dir,] + key_schema.split('/'))
         
         self._tilecache = tile_cache()
         self._coords = {}
     
     def _filename(self, layer, x, y, z=0):
-        return self.pattern.format(level=layer, x=x, y=y, z=z, suff=self.suff, ext=self.ext)
+        fn =  self.pattern.format(level=layer, x=x, y=y, z=z, suff=self.suff, ext=self.ext)
+        #print(f'Tile filename: {fn}, pattern: {self.pattern}, base_dir: {self.base_dir}, layer: {layer}, x: {x}, y: {y}, z: {z}, suff: {self.suff}, ext: {self.ext}')
+        #logger.debug('tile filename: %s' % fn)
+        return fn
         #return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
     
     def get_tile(self, layer, x, y):
@@ -366,7 +369,7 @@ class ImagePyramid(object):
     
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1, backend=PZFTileIO):
+                 pixel_size=1, backend=None):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -374,15 +377,47 @@ class ImagePyramid(object):
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
 
-        if mdh is None and os.path.exists(os.path.join(storage_directory, 'metadata.json')):
-            mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+        
             
         if unifiedIO.is_cluster_uri(storage_directory):
+            if backend is None:
+                backend = ClusterPZFTileIO
+
             assert (backend == ClusterPZFTileIO)
             
             storage_directory, _ = unifiedIO.split_cluster_url(storage_directory)
-        
+
         self.base_dir = storage_directory
+
+        if mdh is None and os.path.exists(os.path.join(storage_directory, 'metadata.json')):
+            mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+
+            
+        if backend is None:
+            # TODO - should we store and read this out of metadata?
+            try:
+                backend = infer_tileio_backend(self.base_dir)
+            except:
+                backend = PZFTileIO
+        
+        if mdh is None:
+            # this is a new pyramid, use the new key schema
+            key_schema = '{level:d}/{z:03d}/{x:03d}/{y:03d}_{suff}{ext}'
+        else:
+            # old, legacy key schema
+            key_schema = mdh.get("Pyramid.KeySchema", '{level:d}/{x:03d}/{x:03d}_{y:03d}_{suff}{ext}')
+
+            # read pyramid tile size from metadata if it exists, otherwise use the provided value
+            pyramid_tile_size = mdh.get("Pyramid.TileSize", pyramid_tile_size)
+            n_tiles_x = mdh.get("Pyramid.NTilesX", n_tiles_x)
+            n_tiles_y = mdh.get("Pyramid.NTilesY", n_tiles_y)
+            pixel_size = mdh.get("Pyramid.PixelSize", pixel_size)
+            x0 = mdh.get("Pyramid.x0", x0)
+            y0 = mdh.get("Pyramid.y0", y0)
+            depth = mdh.get("Pyramid.Depth", depth)
+        
+
+        
         self.tile_size = int(pyramid_tile_size)
         
         self.pyramid_valid = False
@@ -401,18 +436,20 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
+        self._mdh['Pyramid.Backend'] = backend.__name__
+        self._mdh['Pyramid.KeySchema'] = key_schema
+
 
         if (not os.path.exists(self.base_dir)) and (not backend == ClusterPZFTileIO):
             os.makedirs(self.base_dir)
 
         #self._tilecache = TileCache()
 
-        if backend is None:
-            backend = infer_tileio_backend(self.base_dir)
+        
 
-        self._imgs = backend(base_dir=self.base_dir, suff='img')
-        self._acc = backend(base_dir=self.base_dir, suff='acc')
-        self._occ = backend(base_dir=self.base_dir, suff='occ')
+        self._imgs = backend(base_dir=self.base_dir, suff='img', key_schema=key_schema)
+        self._acc = backend(base_dir=self.base_dir, suff='acc', key_schema=key_schema)
+        self._occ = backend(base_dir=self.base_dir, suff='occ', key_schema=key_schema)
     
     @classmethod
     def frame_weights(cls, frame_shape):
