@@ -6,6 +6,7 @@ import os
 import glob
 import collections
 import time
+import json
 import six
 import tempfile
 import logging
@@ -642,6 +643,114 @@ class ImagePyramid(object):
         mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
+
+    def save_zarr_metadata(self, store_path=None):
+        """Write Zarr metadata for reading this PYME pyramid through zarr.
+
+        Notes
+        -----
+        This writes Zarr v2 metadata only. PYME-specific chunk naming details
+        are written into root attrs so a compatible store mapper can translate
+        zarr chunk keys to PYME tile filenames.
+        """
+        if store_path is None:
+            store_path = self.base_dir
+
+        if not os.path.exists(store_path):
+            os.makedirs(store_path)
+
+        def _write_json(path, payload):
+            with open(path, 'w') as fh:
+                json.dump(payload, fh, indent=2, sort_keys=True)
+
+        key_schema = self._mdh.get('Pyramid.KeySchema', '{level:d}/{z:03d}/{x:03d}/{y:03d}_{suff}{ext}')
+
+        suffix = getattr(self._imgs, 'suff', 'img')
+        extension = getattr(self._imgs, 'ext', '.pzf')
+
+        codec_id = None
+        # ZarrBlob backends can carry a numcodecs codec instance in the tile cache.
+        codec = getattr(getattr(self._imgs, '_tilecache', None), 'codec', None)
+        if codec is not None:
+            codec_id = getattr(codec, 'codec_id', None)
+
+        if codec_id is None and extension == '.pzf':
+            # PZF-backed tiles should use the registered read-only codec.
+            codec_id = 'pyme-pzf'
+
+        # Determine level list and array shapes directly from saved tiles.
+        level_shapes = {}
+        for level in range(int(self.depth) + 1):
+            coords = self.get_layer_tile_coords(level)
+            if len(coords) == 0:
+                continue
+
+            max_x = max([c[0] for c in coords]) + 1
+            max_y = max([c[1] for c in coords]) + 1
+            level_shapes[level] = [1, int(max_x * self.tile_size), int(max_y * self.tile_size)]
+
+        if len(level_shapes) == 0:
+            raise RuntimeError('No pyramid tiles found - cannot infer zarr array shapes')
+
+        datasets = [{'path': str(level)} for level in sorted(level_shapes.keys())]
+
+        zgroup = {'zarr_format': 2}
+        zattrs = {
+            'multiscales': [{
+                'version': '0.4',
+                'name': os.path.basename(os.path.abspath(store_path)),
+                'axes': [
+                    {'name': 'z', 'type': 'space'},
+                    {'name': 'x', 'type': 'space'},
+                    {'name': 'y', 'type': 'space'}
+                ],
+                'datasets': datasets,
+                'metadata': {
+                    'method': 'mean',
+                    'version': 'PYME-tile-pyramid'
+                }
+            }],
+            'pyme': {
+                'tile_size': int(self.tile_size),
+                'key_schema': key_schema,
+                'suffix': suffix,
+                'extension': extension
+            }
+        }
+
+        _write_json(os.path.join(store_path, '.zgroup'), zgroup)
+        _write_json(os.path.join(store_path, '.zattrs'), zattrs)
+
+        consolidated = {
+            'zarr_consolidated_format': 1,
+            'metadata': {
+                '.zgroup': zgroup,
+                '.zattrs': zattrs,
+            }
+        }
+
+        for level in sorted(level_shapes.keys()):
+            ldir = os.path.join(store_path, str(level))
+            if not os.path.exists(ldir):
+                os.makedirs(ldir)
+
+            zarray = {
+                'zarr_format': 2,
+                'shape': level_shapes[level],
+                'chunks': [1, int(self.tile_size), int(self.tile_size)],
+                'dtype': '<f4',
+                'compressor': {'id': codec_id} if codec_id is not None else None,
+                'fill_value': 0.0,
+                'filters': None,
+                'order': 'C',
+                'dimension_separator': '/'
+            }
+
+            level_zarray_path = os.path.join(ldir, '.zarray')
+            _write_json(level_zarray_path, zarray)
+            consolidated['metadata']['%d/.zarray' % level] = zarray
+
+        _write_json(os.path.join(store_path, '.zmetadata'), consolidated)
 
     def _ensure_layer_directory(self, layer_num=0):
         # TODO - is this actually required, or do the backends do this?

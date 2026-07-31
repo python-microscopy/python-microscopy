@@ -1272,6 +1272,9 @@ class ImageStack(object):
         
     def _load_zarr(self, filename):
         import zarr
+        # Register pyme:// mapper and pyme-pzf codec when available.
+        from PYME.IO import zarr_compat  # noqa: F401
+        
         from PYME.IO.DataSources import ArrayDataSource
         from PYME.IO.DataSources import BaseDataSource
         
@@ -1280,11 +1283,14 @@ class ImageStack(object):
         else:
             fn = filename
             arrayname = None
-        
-        z = zarr.open(fn, 'r')
-        
-        # reopen using a caching store with 1GB cache size
-        z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
+
+        try:
+            import fsspec
+            store = fsspec.get_mapper(fn)
+            z = zarr.open(zarr.LRUStoreCache(store, int(1e9)), 'r')
+        except ImportError:
+            z = zarr.open(fn, 'r')
+            z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
 
         # TODO - is this a standard OME-NGFF property?
         dims = z.attrs.get('_ARRAY_DIMENSIONS', ['x', 'y', 'z'])            
