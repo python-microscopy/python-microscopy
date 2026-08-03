@@ -89,7 +89,7 @@ class OptionsPanel(wx.Panel):
         for i in range(len(self.do.Chans)):
             if horizOrientation:
                 ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
-                p = self
+                p = ssizer.GetStaticBox()
             else:
                 item = lfp.ChannelFoldingPane(chan_pan, id=-1, display_opts = self.do, chan=i, caption=self.do.names[i], folded=False, pinned=False)
                 pane = wx.Panel(item, -1)
@@ -212,19 +212,20 @@ class OptionsPanel(wx.Panel):
 
         if thresholdControls:
             ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Segmentation'), wx.VERTICAL)
+            _sb = ssizer.GetStaticBox()
 
-            self.cbShowThreshold = wx.CheckBox(self, -1, 'Threshold mode')
+            self.cbShowThreshold = wx.CheckBox(_sb, -1, 'Threshold mode')
             self.cbShowThreshold.Bind(wx.EVT_CHECKBOX, self.OnShowThreshold)
             ssizer.Add(self.cbShowThreshold, 0, wx.ALL, 5)
 
             
             hsizer = wx.WrapSizer(wx.HORIZONTAL)
-            self.bIsodataThresh = wx.Button(self, -1, 'Isodata')
+            self.bIsodataThresh = wx.Button(_sb, -1, 'Isodata')
             self.bIsodataThresh.Bind(wx.EVT_BUTTON, self.OnIsodataThresh)
             self.bIsodataThresh.Enable(False)
             hsizer.Add(self.bIsodataThresh, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
 
-            self.bLIsodataThresh = wx.Button(self, -1, 'Isodata (logbins)')
+            self.bLIsodataThresh = wx.Button(_sb, -1, 'Isodata (logbins)')
             self.bLIsodataThresh.Bind(wx.EVT_BUTTON, lambda e : self.OnIsodataThresh(e, bin_spacing='log'))
             self.bLIsodataThresh.Enable(False)
             hsizer.Add(self.bLIsodataThresh, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
@@ -233,10 +234,10 @@ class OptionsPanel(wx.Panel):
 
 
             hsizer=wx.BoxSizer(wx.HORIZONTAL)
-            self.tPercThresh = wx.TextCtrl(self, -1, '.80', size=[30, -1])
+            self.tPercThresh = wx.TextCtrl(_sb, -1, '.80', size=[30, -1])
             self.tPercThresh.Enable(False)
             hsizer.Add(self.tPercThresh, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
-            self.bPercThresh = wx.Button(self, -1, 'Signal Fraction')
+            self.bPercThresh = wx.Button(_sb, -1, 'Signal Fraction')
             self.bPercThresh.Bind(wx.EVT_BUTTON, self.OnSignalFracThresh)
             self.bPercThresh.Enable(False)
             hsizer.Add(self.bPercThresh, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
