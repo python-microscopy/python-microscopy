@@ -73,3 +73,7 @@ class DataSource(XYZTCDataSource):
     def __del__(self):
         self.release()
 
+    @property
+    def ome_series_metadata(self):
+        return self._bf.ome_metadata.images[self.series_num]
+
