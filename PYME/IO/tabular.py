@@ -109,7 +109,6 @@ class TabularBase(object):
         numpy recarray version of self
 
         """
-        from numpy.core import records
         if keys is None:
             keys = list(self.keys())
 
@@ -124,7 +123,7 @@ class TabularBase(object):
         dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys_, cols)]
         
         #print(dt)
-        return records.fromarrays(cols, names=keys_, dtype=dt)
+        return np.rec.fromarrays(cols, names=keys_, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None,
                keep_alive_timeout=0):
