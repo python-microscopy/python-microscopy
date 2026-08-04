@@ -917,7 +917,7 @@ class OMEXMLMDHandler(XMLMDHandler):
             
         return ps
         
-    def __init__(self, XMLData = None, mdToCopy=None):
+    def __init__(self, XMLData = None, mdToCopy=None, series=0):
         if not XMLData is None:
             #loading an existing file
             self.doc = parseString(XMLData)
@@ -927,9 +927,11 @@ class OMEXMLMDHandler(XMLMDHandler):
             except IndexError:
                 self.md = self.doc.createElement('MetaData')
                 self.doc.documentElement.appendChild(self.md)
-                
-                #try to load pixel size etc fro OME metadata
-                pix = self.doc.getElementsByTagName('Pixels')[0]
+
+                # Scope all lookups to the requested <Image> element.
+                images = self.doc.getElementsByTagName('Image')
+                img = images[min(series, len(images) - 1)]
+                pix = img.getElementsByTagName('Pixels')[0]
 
                 #using -ve defaults will trigger a voxelsize prompt in the GUI if pixel size metadata is not present
                 self['voxelsize.x'] = self._get_pixel_size_um(pix, 'X', -.1)
@@ -957,7 +959,7 @@ class OMEXMLMDHandler(XMLMDHandler):
                     self['ChannelNames'] = ch_names
                     
                 # extract stage positions if present
-                planes = self.doc.getElementsByTagName('Plane')
+                planes = pix.getElementsByTagName('Plane')
                 if planes:
                     plane = planes[0]
                     try:
