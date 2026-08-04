@@ -956,9 +956,40 @@ class OMEXMLMDHandler(XMLMDHandler):
                 if any(ch_names):
                     self['ChannelNames'] = ch_names
                     
-                #except:
-                #    pass
-            
+                # extract stage positions if present
+                planes = self.doc.getElementsByTagName('Plane')
+                if planes:
+                    x = float(planes[0].getAttribute('PositionX')) 
+                    x_unit = planes[0].getAttribute('PositionXUnit') # convert to um
+                    if x_unit == 'um':
+                        self['Positioning.Stage_X'] = x
+                    elif x_unit == 'mm':
+                        self['Positioning.Stage_X'] = x * 1000
+                    elif x_unit == 'm':
+                        self['Positioning.Stage_X'] = x * 1000000
+                    else:
+                        self['Positioning.Stage_X'] = x
+                    y = float(planes[0].getAttribute('PositionY'))
+                    y_unit = planes[0].getAttribute('PositionYUnit') # convert to um
+                    if y_unit == 'um':
+                        self['Positioning.Stage_Y'] = y
+                    elif y_unit == 'mm':
+                        self['Positioning.Stage_Y'] = y * 1000
+                    elif y_unit == 'm':
+                        self['Positioning.Stage_Y'] = y * 1000000
+                    else:
+                        self['Positioning.Stage_Y'] = y
+                    z = float(planes[0].getAttribute('PositionZ'))
+                    z_unit = planes[0].getAttribute('PositionZUnit') # convert to um
+                    if z_unit == 'um':
+                        self['Positioning.PIFoc'] = z
+                    elif z_unit == 'mm':
+                        self['Positioning.PIFoc'] = z * 1000
+                    elif z_unit == 'm':
+                        self['Positioning.PIFoc'] = z * 1000000
+                    else:
+                        self['Positioning.PIFoc'] = z
+
             
                 
             
