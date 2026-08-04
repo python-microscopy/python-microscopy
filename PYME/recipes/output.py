@@ -220,7 +220,7 @@ class ImageOutput(OutputModule):
         _ensure_output_directory(out_filename)
         
         v = self.generate(namespace)
-        v.Save(out_filename)
+        v.save(out_filename)
 
 
 @register_module('RGBImageOutput')
