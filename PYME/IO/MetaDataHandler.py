@@ -917,7 +917,7 @@ class OMEXMLMDHandler(XMLMDHandler):
             
         return ps
         
-    def __init__(self, XMLData = None, mdToCopy=None):
+    def __init__(self, XMLData = None, mdToCopy=None, series=0):
         if not XMLData is None:
             #loading an existing file
             self.doc = parseString(XMLData)
@@ -927,9 +927,11 @@ class OMEXMLMDHandler(XMLMDHandler):
             except IndexError:
                 self.md = self.doc.createElement('MetaData')
                 self.doc.documentElement.appendChild(self.md)
-                
-                #try to load pixel size etc fro OME metadata
-                pix = self.doc.getElementsByTagName('Pixels')[0]
+
+                # Scope all lookups to the requested <Image> element.
+                images = self.doc.getElementsByTagName('Image')
+                img = images[min(series, len(images) - 1)]
+                pix = img.getElementsByTagName('Pixels')[0]
 
                 #using -ve defaults will trigger a voxelsize prompt in the GUI if pixel size metadata is not present
                 self['voxelsize.x'] = self._get_pixel_size_um(pix, 'X', -.1)
@@ -956,9 +958,26 @@ class OMEXMLMDHandler(XMLMDHandler):
                 if any(ch_names):
                     self['ChannelNames'] = ch_names
                     
-                #except:
-                #    pass
-            
+                # extract stage positions if present
+                planes = pix.getElementsByTagName('Plane')
+                if planes:
+                    plane = planes[0]
+                    try:
+                        x = float(plane.getAttribute('PositionX'))
+                        self['Positioning.x'] = x * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionXUnit'), 1.0)
+                    except (ValueError, TypeError):
+                        pass
+                    try:
+                        y = float(plane.getAttribute('PositionY'))
+                        self['Positioning.y'] = y * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionYUnit'), 1.0)
+                    except (ValueError, TypeError):
+                        pass
+                    try:
+                        z = float(plane.getAttribute('PositionZ'))
+                        self['Positioning.z'] = z * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionZUnit'), 1.0)
+                    except (ValueError, TypeError):
+                        pass
+
             
                 
             
