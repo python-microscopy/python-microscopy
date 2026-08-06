@@ -964,17 +964,17 @@ class OMEXMLMDHandler(XMLMDHandler):
                     plane = planes[0]
                     try:
                         x = float(plane.getAttribute('PositionX'))
-                        self['Positioning.Stage_X'] = x * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionXUnit'), 1.0)
+                        self['Positioning.x'] = x * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionXUnit'), 1.0)
                     except (ValueError, TypeError):
                         pass
                     try:
                         y = float(plane.getAttribute('PositionY'))
-                        self['Positioning.Stage_Y'] = y * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionYUnit'), 1.0)
+                        self['Positioning.y'] = y * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionYUnit'), 1.0)
                     except (ValueError, TypeError):
                         pass
                     try:
                         z = float(plane.getAttribute('PositionZ'))
-                        self['Positioning.PIFoc'] = z * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionZUnit'), 1.0)
+                        self['Positioning.z'] = z * self._OME_UNITS_TO_UM.get(plane.getAttribute('PositionZUnit'), 1.0)
                     except (ValueError, TypeError):
                         pass
 
