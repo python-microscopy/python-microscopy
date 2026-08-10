@@ -22,7 +22,11 @@ dependencies = [
   "numpy>=1.22",
   "scipy",
   "matplotlib",
-  "wxpython",
+  # next two lines to restrict to wxpython<4.3 until bug on macos fixed, see also
+  #    https://github.com/wxWidgets/Phoenix/issues/2937 and
+  #    https://github.com/python-microscopy/python-microscopy/issues/1694
+  "wxpython!=4.3.0,!=4.3.1; platform_system == 'Darwin'",
+  "wxpython; platform_system != 'Darwin'",
   "cython",
   "tables",
   "pyopengl",
