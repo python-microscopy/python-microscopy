@@ -59,7 +59,7 @@ except ImportError: # coundir module is posix only, fall back to more naive meth
             return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
         
         elif fpath.endswith('.h5'):
-            return (fn, FileInfo(FILETYPE_SERIES, os.path.getsize(fpath)))
+            return (fn, FileInfo(FILETYPE_SERIES|FILETYPE_SERIES_COMPLETE, os.path.getsize(fpath)))
         else:
             return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
 
