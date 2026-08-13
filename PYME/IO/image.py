@@ -1141,12 +1141,11 @@ class ImageStack(object):
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
 
         print('BioformatsBFF: parsing OME metadata')
-        # Re-open briefly to retrieve the OME XML; the DataSource holds its own handle.
-        with BioFile(fn) as bf:
-            ome_xml = bf.ome_xml
+        # Use the already-open file handle; avoids a redundant open/close cycle.
+        ome_xml = self.dataSource._bf.ome_xml
 
         if ome_xml:
-            OMEmd = MetaDataHandler.OMEXMLMDHandler(ome_xml.encode('utf8'))
+            OMEmd = MetaDataHandler.OMEXMLMDHandler(ome_xml.encode('utf8'), series=series_num)
             self.mdh.copyEntriesFrom(OMEmd)
 
         print('BioformatsBFF: done')
@@ -1223,7 +1222,7 @@ class ImageStack(object):
         print("Bioformats:loading metadata")
         OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
         print("Bioformats:parsing metadata")
-        OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
+        OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML, series=series_num or 0)
         self.mdh.copyEntriesFrom(OMEmd)
         print("Bioformats:done")
         
