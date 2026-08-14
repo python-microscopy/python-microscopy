@@ -5,8 +5,8 @@
     <title>PYMEAcquire</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-{#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"#}
-{#          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">#}
+<!--    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"-->
+<!--          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">-->
     <link rel="stylesheet" href="/static/css/pyme-bootstrap.css">
     <link rel="stylesheet" href="/static/css/pymeacquire.css">
 </head>
@@ -15,13 +15,10 @@
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PYMEAcquire - now with more web</a>
     <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-            {% if authenticated_as %}
-                <span class="navbar-text">Signed in as {{ authenticated_as }}</span>
-                <a class="nav-link" href="/logout">Sign out</a>
-            {% else %}
-                <a class="nav-link" href="/login">Sign in</a>
-            {% endif %}
+        <li class="nav-item text-nowrap" id="authStatus">
+            <span class="navbar-text" id="userDisplay" style="display:none;">Signed in as <span id="userName"></span></span>
+            <a class="nav-link" href="#" id="signOutBtn" style="display:none;">Sign out</a>
+            <a class="nav-link" href="/login.html" id="signInBtn" style="display:none;">Sign in</a>
         </li>
     </ul>
 </nav>
@@ -60,7 +57,6 @@
 
                 </form>
 
-                {% raw %}
                 <div id="hw">
                     <h6 class="sidebar-heading"><span>Camera</span></h6>
 
@@ -130,7 +126,6 @@
 
 
                 </div>
-                {% endraw %}
 
             </div>
         </nav>
@@ -147,7 +142,6 @@
 
                     <div class="tab-pane fade uitab bg-dark" id="aq_settings" role="tabpanel" aria-labelledby="aq-tab">
                         <div style=" width: 100%; height: 300px;  overflow: scroll;">
-                            {% raw %}
                             <h3>PALM/STORM/PAINT Settings</h3>
                             <div class="container-fluid">
                                 <div class="row">
@@ -168,19 +162,16 @@
                                     </div>
                                 </div>
                             </div>
-                            {%  endraw %}
                         </div>
                     </div>
 
                     <div class="tab-pane fade uitab bg-dark" id="state" role="tabpanel" aria-labelledby="state-tab">
                         <div style=" width: 100%; height: 400px;  overflow: scroll;">
                             <table class="table table-sm table-dark">
-                                {% raw %}
                                 <tr v-for="(val, prop_name) in state" :key="prop_name">
                                     <td>{{ prop_name }}</td>
                                     <td>{{ val }}</td>
                                 </tr>
-                                {% endraw %}
                             </table>
                         </div>
                     </div>
@@ -228,5 +219,9 @@
         crossorigin="anonymous"></script>
 <script src="/static/js/pzf.js"></script>
 <script src="/static/js/pymeacquire.js"></script>
+<script src="/static/js/auth.js"></script>
+</body>
+</html>
+
 </body>
 </html>
