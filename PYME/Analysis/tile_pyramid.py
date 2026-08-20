@@ -6,6 +6,7 @@ import os
 import glob
 import collections
 import time
+import json
 import six
 import tempfile
 import logging
@@ -118,7 +119,43 @@ class ClusterPZFTileCache(TileCache):
         
         s = clusterIO.get_file(filename)
         return PZFFormat.loads(s)[0].squeeze()
-    
+
+class ZarrBlobTileCache(TileCache):
+    """Saves tiles in a format which is binary-compatible with zarr chuncks, allowing Zarr to read the tiles directly.
+
+    Zarr chuncks are raw binary data without a header, but optionally with a codec appllied.
+
+    Parameters:
+    ----------
+    max_size : int
+        Maximum number of tiles to keep in memory before flushing to disk.
+    codec : numcodecs.abc.Codec, optional
+        Codec to use for compressing tile data.s
+    """
+    def __init__(self, max_size=1000, codec=None):
+        super().__init__(max_size=max_size)
+        self.codec = codec
+
+    def _save(self, filename, data):
+        dirname = os.path.split(filename)[0]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        if self.codec is not None:
+            data = self.codec.encode(data)
+
+        with open(filename, 'wb') as f:
+            f.write(data.tobytes())
+
+    def _load(self, filename):
+        with open(filename, 'rb') as f:
+            data = f.read()
+        
+        if self.codec is not None:
+            data = self.codec.decode(data)
+        
+        return data
+
 class TileIO(object):
     def get_tile(self, layer, x, y):
         raise NotImplementedError
@@ -138,18 +175,22 @@ class TileIO(object):
     def flush(self):
         pass
 
-class NumpyTileIO(TileIO):
-    def __init__(self, base_dir, suff='img'):
+class FileBackedTileIO(TileIO):
+    def __init__(self, base_dir, suff='img', ext='', tile_cache=TileCache, key_schema='{level:d}/{x:03d}/{x:03d}_{y:03d}_{suff}{ext}'):
         self.base_dir = base_dir
-        self.suff = suff + '.npy'
+        self.suff = suff
+        self.ext = ext
+
+        self.pattern = os.sep.join([self.base_dir,] + key_schema.split('/'))
         
-        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
-        
-        self._tilecache = TileCache()
+        self._tilecache = tile_cache()
         self._coords = {}
     
-    def _filename(self, layer, x, y):
-        return self.pattern % (layer, x, x, y)
+    def _filename(self, layer, x, y, z=0):
+        fn =  self.pattern.format(level=layer, x=x, y=y, z=z, suff=self.suff, ext=self.ext)
+        #print(f'Tile filename: {fn}, pattern: {self.pattern}, base_dir: {self.base_dir}, layer: {layer}, x: {x}, y: {y}, z: {z}, suff: {self.suff}, ext: {self.ext}')
+        #logger.debug('tile filename: %s' % fn)
+        return fn
         #return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
     
     def get_tile(self, layer, x, y):
@@ -193,15 +234,17 @@ class NumpyTileIO(TileIO):
     def flush(self):
         self._tilecache.flush()
 
-class PZFTileIO(NumpyTileIO):
-    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache):
-        self.base_dir = base_dir
-        self.suff = suff + '.pzf'
+class NumpyTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=TileCache, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.npy', tile_cache=tile_cache, **kwargs)
 
-        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
-    
-        self._tilecache = tile_cache()
-        self._coords = {}
+class PZFTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.pzf', tile_cache=tile_cache, **kwargs)
+
+class ZarrBlobTileIO(FileBackedTileIO):
+    def __init__(self, base_dir, suff='img', tile_cache=ZarrBlobTileCache, codec=None, **kwargs):
+        FileBackedTileIO.__init__(self, base_dir, suff=suff, ext='.zarr', tile_cache=lambda: tile_cache(codec=codec), **kwargs)
         
 class ClusterPZFTileIO(PZFTileIO):
     def __init__(self, base_dir, suff='img'):
@@ -327,20 +370,55 @@ class ImagePyramid(object):
     
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1, backend=PZFTileIO):
+                 pixel_size=1, backend=None, **backend_kwargs):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
             # used to support transitory pyramids. 
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
+
+        
             
         if unifiedIO.is_cluster_uri(storage_directory):
+            if backend is None:
+                backend = ClusterPZFTileIO
+
             assert (backend == ClusterPZFTileIO)
             
             storage_directory, _ = unifiedIO.split_cluster_url(storage_directory)
-        
+
         self.base_dir = storage_directory
+
+        if mdh is None and os.path.exists(os.path.join(storage_directory, 'metadata.json')):
+            mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+
+            
+        if backend is None:
+            # TODO - should we store and read this out of metadata?
+            try:
+                backend = infer_tileio_backend(self.base_dir)
+            except:
+                backend = PZFTileIO
+        
+        if mdh is None:
+            # this is a new pyramid, use the new key schema
+            key_schema = '{level:d}/{z:03d}/{x:03d}/{y:03d}_{suff}{ext}'
+        else:
+            # old, legacy key schema
+            key_schema = mdh.get("Pyramid.KeySchema", '{level:d}/{x:03d}/{x:03d}_{y:03d}_{suff}{ext}')
+
+            # read pyramid tile size from metadata if it exists, otherwise use the provided value
+            pyramid_tile_size = mdh.get("Pyramid.TileSize", pyramid_tile_size)
+            n_tiles_x = mdh.get("Pyramid.NTilesX", n_tiles_x)
+            n_tiles_y = mdh.get("Pyramid.NTilesY", n_tiles_y)
+            pixel_size = mdh.get("Pyramid.PixelSize", pixel_size)
+            x0 = mdh.get("Pyramid.x0", x0)
+            y0 = mdh.get("Pyramid.y0", y0)
+            depth = mdh.get("Pyramid.Depth", depth)
+        
+
+        
         self.tile_size = int(pyramid_tile_size)
         
         self.pyramid_valid = False
@@ -359,19 +437,21 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
+        self._mdh['Pyramid.Backend'] = backend.__name__
+        self._mdh['Pyramid.KeySchema'] = key_schema
+
 
         if (not os.path.exists(self.base_dir)) and (not backend == ClusterPZFTileIO):
             os.makedirs(self.base_dir)
 
         #self._tilecache = TileCache()
 
-        if backend is None:
-            backend = infer_tileio_backend(self.base_dir)
+        
 
-        self._imgs = backend(base_dir=self.base_dir, suff='img')
-        self._acc = backend(base_dir=self.base_dir, suff='acc')
-        self._occ = backend(base_dir=self.base_dir, suff='occ')
-    
+        self._imgs = backend(base_dir=self.base_dir, suff='img', key_schema=key_schema, **backend_kwargs)
+        self._acc = backend(base_dir=self.base_dir, suff='acc', key_schema=key_schema, **backend_kwargs)
+        self._occ = backend(base_dir=self.base_dir, suff='occ', key_schema=key_schema, **backend_kwargs)
+
     @classmethod
     def frame_weights(cls, frame_shape):
         k = tuple(frame_shape[:2])
@@ -563,6 +643,114 @@ class ImagePyramid(object):
         mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
+
+    def save_zarr_metadata(self, store_path=None):
+        """Write Zarr metadata for reading this PYME pyramid through zarr.
+
+        Notes
+        -----
+        This writes Zarr v2 metadata only. PYME-specific chunk naming details
+        are written into root attrs so a compatible store mapper can translate
+        zarr chunk keys to PYME tile filenames.
+        """
+        if store_path is None:
+            store_path = self.base_dir
+
+        if not os.path.exists(store_path):
+            os.makedirs(store_path)
+
+        def _write_json(path, payload):
+            with open(path, 'w') as fh:
+                json.dump(payload, fh, indent=2, sort_keys=True)
+
+        key_schema = self._mdh.get('Pyramid.KeySchema', '{level:d}/{z:03d}/{x:03d}/{y:03d}_{suff}{ext}')
+
+        suffix = getattr(self._imgs, 'suff', 'img')
+        extension = getattr(self._imgs, 'ext', '.pzf')
+
+        codec_id = None
+        # ZarrBlob backends can carry a numcodecs codec instance in the tile cache.
+        codec = getattr(getattr(self._imgs, '_tilecache', None), 'codec', None)
+        if codec is not None:
+            codec_id = getattr(codec, 'codec_id', None)
+
+        if codec_id is None and extension == '.pzf':
+            # PZF-backed tiles should use the registered read-only codec.
+            codec_id = 'pyme-pzf'
+
+        # Determine level list and array shapes directly from saved tiles.
+        level_shapes = {}
+        for level in range(int(self.depth) + 1):
+            coords = self.get_layer_tile_coords(level)
+            if len(coords) == 0:
+                continue
+
+            max_x = max([c[0] for c in coords]) + 1
+            max_y = max([c[1] for c in coords]) + 1
+            level_shapes[level] = [1, int(max_x * self.tile_size), int(max_y * self.tile_size)]
+
+        if len(level_shapes) == 0:
+            raise RuntimeError('No pyramid tiles found - cannot infer zarr array shapes')
+
+        datasets = [{'path': str(level)} for level in sorted(level_shapes.keys())]
+
+        zgroup = {'zarr_format': 2}
+        zattrs = {
+            'multiscales': [{
+                'version': '0.4',
+                'name': os.path.basename(os.path.abspath(store_path)),
+                'axes': [
+                    {'name': 'z', 'type': 'space'},
+                    {'name': 'x', 'type': 'space'},
+                    {'name': 'y', 'type': 'space'}
+                ],
+                'datasets': datasets,
+                'metadata': {
+                    'method': 'mean',
+                    'version': 'PYME-tile-pyramid'
+                }
+            }],
+            'pyme': {
+                'tile_size': int(self.tile_size),
+                'key_schema': key_schema,
+                'suffix': suffix,
+                'extension': extension
+            }
+        }
+
+        _write_json(os.path.join(store_path, '.zgroup'), zgroup)
+        _write_json(os.path.join(store_path, '.zattrs'), zattrs)
+
+        consolidated = {
+            'zarr_consolidated_format': 1,
+            'metadata': {
+                '.zgroup': zgroup,
+                '.zattrs': zattrs,
+            }
+        }
+
+        for level in sorted(level_shapes.keys()):
+            ldir = os.path.join(store_path, str(level))
+            if not os.path.exists(ldir):
+                os.makedirs(ldir)
+
+            zarray = {
+                'zarr_format': 2,
+                'shape': level_shapes[level],
+                'chunks': [1, int(self.tile_size), int(self.tile_size)],
+                'dtype': '<f4',
+                'compressor': {'id': codec_id} if codec_id is not None else None,
+                'fill_value': 0.0,
+                'filters': None,
+                'order': 'C',
+                'dimension_separator': '/'
+            }
+
+            level_zarray_path = os.path.join(ldir, '.zarray')
+            _write_json(level_zarray_path, zarray)
+            consolidated['metadata']['%d/.zarray' % level] = zarray
+
+        _write_json(os.path.join(store_path, '.zmetadata'), consolidated)
 
     def _ensure_layer_directory(self, layer_num=0):
         # TODO - is this actually required, or do the backends do this?

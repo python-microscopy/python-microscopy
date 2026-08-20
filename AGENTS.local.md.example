@@ -1,0 +1,7 @@
+# Local, developer-specific agent instructions (not committed)
+#
+# Copy this file to AGENTS.local.md and fill in your own environment details.
+# AGENTS.local.md is gitignored so it stays specific to your checkout.
+
+## Conda environment
+- Use the conda environment at `/path/to/your/conda/envs/pyme` for this checkout.

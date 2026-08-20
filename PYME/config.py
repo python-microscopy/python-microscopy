@@ -276,11 +276,11 @@ if not os.path.exists(user_config_dir):
         #copy template configuration files
         try:
             # Python 3.9+
-            template_files = importlib.resources.files('PYME.resources.config_template')
+            template_files = importlib.resources.files('PYME.resources')/'config_template'
         except AttributeError:
             # Python 3.7-3.8 fallback
             import importlib_resources
-            template_files = importlib_resources.files('PYME.resources.config_template')
+            template_files = importlib_resources.files('PYME.resources').joinpath('config_template')
         
         for file in template_files.iterdir():
             if file.is_file():

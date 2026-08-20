@@ -38,7 +38,7 @@ Obviously substituting the path to the un-packed wheel. It's a bit of a judgemen
 
 ## Editable install (replaces `python setup.py develop`)
 
-Ensure `build`,  `meson` and `meson-python` are installed alongside standard install dependencies
+Ensure `build`,  `meson`, `meson-python`, and `ninja` are installed alongside standard build-time dependencies (`numpy`, `cython`)
 
 ```bash
 pip install --no-build-isolation --editable .  

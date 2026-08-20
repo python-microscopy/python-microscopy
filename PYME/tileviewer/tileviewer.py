@@ -33,9 +33,14 @@ class TileServer(object):
         
     def _set_tile_source(self, tile_dir):
         self.tile_dir = tile_dir
-        self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
-        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
+        #self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
+        self._pyramid = tile_pyramid.ImagePyramid(tile_dir)
         
+    #property
+    @property
+    def mdh(self):
+        return self._pyramid.mdh
+
     @cherrypy.expose
     def set_tile_source(self, tile_dir):
         self._set_tile_source(tile_dir)
