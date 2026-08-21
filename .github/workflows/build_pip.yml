@@ -4,14 +4,17 @@
 name: Build PIP packages
 
 on:
-  release:
-    types: [created, edited]
-
+  workflow_run:
+    workflows: ["Make release"]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
   deploy_source:
     runs-on: 'macos-latest'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
     - uses: actions/checkout@v2
