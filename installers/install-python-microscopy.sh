@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Linux/Mac installer for PYME. Also serves as the Mac installer pending a native .app.
-# Usage: install.sh [--dest <path>]   (default: ~/PYME)
+# Usage: install-python-microscopy.sh [--dest <path>]   (default: ~/PYME)
 #
 # Context A (CI/dev): uv is expected to be in PATH already.
 # Context B (end-user): uv is bootstrapped via astral.sh if not found.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=installer_defines.sh
-source "$SCRIPT_DIR/installer_defines.sh"
+# --- Configuration ---
+TARGET_PYTHON=3.13
+PACKAGE_NAME=python-microscopy
+ENTRY_POINTS=(PYMEAcquire PYMEImage PYMEVis PYMEClusterOfOne)
+DEFAULT_DEST="$HOME/PYME"
 
 DEST="$DEFAULT_DEST"
 

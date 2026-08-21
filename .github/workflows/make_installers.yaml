@@ -24,7 +24,7 @@ jobs:
 
       - name: Build bundle
         shell: cmd
-        run: installers\install.bat bundle
+        run: installers\install-python-microscopy.bat bundle
 
       - name: Get installed version
         id: version
