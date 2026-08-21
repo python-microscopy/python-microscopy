@@ -1,0 +1,56 @@
+name: Build Installers
+
+on:
+  workflow_run:
+    workflows: ["Build PIP packages"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build bundle
+        shell: cmd
+        run: installers\install-python-microscopy.bat bundle
+
+      - name: Get installed version
+        id: version
+        shell: pwsh
+        run: |
+          $v = & "bundle\venv\Scripts\python.exe" `
+            -c "import importlib.metadata; print(importlib.metadata.version('python-microscopy'))"
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            /DAppSourceDir="$env:GITHUB_WORKSPACE\bundle" `
+            /DAppVersion="${{ steps.version.outputs.version }}" `
+            installers\windows\pyme_setup.iss
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PYME-${{ steps.version.outputs.version }}-windows-installer
+          path: installers\windows\Output\PYME-*-setup.exe
+
+      - name: Attach to release
+        if: github.event_name == 'workflow_run'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: installers/windows/Output/PYME-*-setup.exe
