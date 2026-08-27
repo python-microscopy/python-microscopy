@@ -19,26 +19,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Build bundle
-        shell: cmd
-        run: installers\install-python-microscopy.bat bundle
-
-      - name: Get installed version
+      # The installer no longer bundles a pre-built venv (see pyme_setup.iss —
+      # uv venvs bake in an absolute interpreter path, so one built on the
+      # runner can't be relocated to an end user's machine). It installs PYME
+      # on the target machine instead, so all we need from CI is the version
+      # string, read straight from pyproject.toml.
+      - name: Get package version
         id: version
         shell: pwsh
         run: |
-          $v = & "bundle\venv\Scripts\python.exe" `
-            -c "import importlib.metadata; print(importlib.metadata.version('python-microscopy'))"
-          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $content = Get-Content pyproject.toml -Raw
+          if ($content -notmatch '(?m)^version\s*=\s*"([^"]+)"') {
+            throw "Could not find version in pyproject.toml"
+          }
+          "version=$($Matches[1])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Build installer
         shell: pwsh
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
-            /DAppSourceDir="$env:GITHUB_WORKSPACE\bundle" `
+            /DRepoDir="$env:GITHUB_WORKSPACE" `
             /DAppVersion="${{ steps.version.outputs.version }}" `
             installers\windows\pyme_setup.iss
 

@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: ---- Config (mirrors installer_defines.sh — keep in sync) ----
+:: ---- Config (mirrors installer_defines.sh - keep in sync) ----
 set "TARGET_PYTHON=3.13"
 set "PACKAGE_NAME=python-microscopy"
 set "ENTRY_POINTS=PYMEAcquire PYMEImage PYMEVis PYMEClusterOfOne"
@@ -13,7 +13,7 @@ echo Installing PYME to: !DEST!
 if not exist "!DEST!\" mkdir "!DEST!"
 
 :: ---- Locate or download uv ----
-:: Context A (CI): uv is in PATH via astral-sh/setup-uv action — the where check passes immediately.
+:: Context A (CI): uv is in PATH via astral-sh/setup-uv action - the where check passes immediately.
 :: Context B (end-user): uv.exe is downloaded to DEST\bin\ and used from there.
 where uv >nul 2>&1
 if not errorlevel 1 (
@@ -24,8 +24,16 @@ if not errorlevel 1 (
 )
 
 :: ---- Managed Python + virtual environment ----
+:: UV_PYTHON_INSTALL_DIR is pointed under DEST rather than uv's default
+:: (%APPDATA%\uv\python\...): on Windows 11 24H2+, an installer-spawned
+:: process is denied creation of uv's per-minor-version junction there by
+:: RedirectionGuard ("the path cannot be traversed because it contains an
+:: untrusted mount point", os error 448). DEST isn't a protected known
+:: folder, so it isn't subject to that restriction, and this also keeps
+:: the whole install self-contained under DEST.
+set "UV_PYTHON_INSTALL_DIR=!DEST!\uv-python"
 echo Installing Python !TARGET_PYTHON!...
-"!UV!" python install !TARGET_PYTHON!
+"!UV!" python install --no-bin !TARGET_PYTHON!
 if errorlevel 1 (echo ERROR: uv python install failed & exit /b 1)
 
 echo Creating virtual environment...
