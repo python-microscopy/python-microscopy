@@ -40,7 +40,7 @@ class Octree(ModuleBase):
         
 @register_module('LocalPointDensity')
 class LocalPointDensity(ModuleBase):
-    """
+    r"""
     Estimate the local density around a localization by fitting a scaling function to the number of
     Neigbours vs distance. The expected scaling function for a uniform density is used ($N \propto r^2$
     for 2D, $N\propto r^3$ for 3D.
@@ -508,3 +508,171 @@ class GaussianMixtureModel(ModuleBase):
             avg_log_prob[mask] = np.mean(log_prob[mask])
         out.addColumn(self.label_key + '_avg_log_prob', avg_log_prob)
         namespace[self.output_labeled] = out
+
+
+@register_module('IterativeClosestPoint')
+class IterativeClosestPoint(ModuleBase):
+    """ Use iterative closest point algorithm to register target point cloud to
+    reference point cloud. Useful for accounting for unknown translations and
+    rotations introduced in between, e.g., PAINT imager washes.
+
+    References
+    ----------
+    [1] https://www.cs.princeton.edu/courses/archive/fall18/cos526/notes/cos526_f18_lecture10_acquisition_registration.pdf
+    [2] Zhang, Z. Iterative point matching for registration of free-form curves and surfaces. Int J Comput Vision 13, 119–152 (1994).
+    [3] Berthold K. P. Horn, "Closed-form solution of absolute orientation using unit quaternions," J. Opt. Soc. Am. A 4, 629-642 (1987) 
+
+    Parameters
+    ----------
+    reference: PYME.IO.tabular
+        The point cloud to which we will register the other point cloud.
+    to_register: PYME.IO.tabular
+        This point cloud will be translated and rotated to match the 
+        reference pointcloud.
+    max_iters : int
+        Maximum number of iterations to use to register points
+    distance_threshold: float
+        Maximum distance between points at which they are considered close enough
+        for registration. If set to -1, this will be automatically calculated.
+    max_points : Int
+        Maximum number of points to use per iteration for registration. If set to
+        -1, all points passing `distance_threshold` will be used.
+    sigma_x : str
+        Key for localization precision along x dimension
+    sigma_y : str
+        Key for localization precision along y dimension
+    sigma_z : str
+        Key for localization precision along z dimension
+
+    Returns
+    -------
+    output : PYME.IO.tabular
+        The to_register point cloud mapped onto the reference point cloud.
+    """
+
+    reference = Input('reference')
+    to_register = Input('to_register')
+    output = Output('registered')
+    max_iters = Int(5)
+    distance_threshold = Float(-1)
+    max_points = Int(1000)
+    sigma_x = CStr('error_x')
+    sigma_y = CStr('error_y')
+    sigma_z = CStr('error_z')
+
+    def execute(self, namespace):
+        from scipy.spatial import KDTree
+        from PYME.Analysis.points.coordinate_tools import absolute_orientation
+        from PYME.IO import MetaDataHandler
+
+        reference = namespace[self.reference]
+        target = namespace[self.to_register]
+
+        reference_pts0 = np.vstack([reference['x'], reference['y'], reference['z']]).T
+        reference_tree = KDTree(reference_pts0)
+        
+        target_pts = np.vstack([target['x'], target['y'], target['z']])
+        # print(reference_pts0.shape, target_pts.shape)
+
+        # print("reference x:", reference['x'][:10])
+        # print("referencepts0 x:", reference_pts0[:10,0])
+
+        rot_tot = []
+        shift_tot = []
+
+        for k in range(self.max_iters):
+            # Get the 1 nearest neighbor of each target point in reference
+            dist, idxs_reference = reference_tree.query(target_pts.T)
+
+            # print("idxs_reference: ", idxs_reference[:10])
+
+            # Reject pairs further apart than self.distance_threshold 
+            if self.distance_threshold  < 0:
+                # Calculate the distance threshold as median + mad
+                # See [2] for other threshold options
+                median = np.median(dist)
+                mad = np.median(np.abs(dist-median))
+                distance_threshold = median + mad
+                if distance_threshold <= 0:
+                    # all points are close
+                    break
+            else:
+                distance_threshold = self.distance_threshold
+            idxs_dist = np.flatnonzero(dist < distance_threshold)
+
+            # Crop down to self.max_points
+            if (self.max_points > 0) and (len(idxs_dist) > self.max_points):
+                idxs_dist = np.random.choice(idxs_dist, size=self.max_points)
+            # Now grab the points on which to iterate
+            idxs_reference = idxs_reference[idxs_dist]
+            # print("idxs_reference: ", idxs_reference[:10])
+            idxs_target = np.arange(target_pts.shape[1])[idxs_dist]
+
+            reference_pts = np.vstack([reference['x'][idxs_reference], 
+                                       reference['y'][idxs_reference], 
+                                       reference['z'][idxs_reference]])
+            try:
+                reference_weights = np.vstack([1/reference[self.sigma_x][idxs_reference], 
+                                               1/reference[self.sigma_y][idxs_reference], 
+                                               1/reference[self.sigma_z][idxs_reference]])
+                
+                # The error has to be less than the localization precision of the dataset
+                rescmp = ((1/reference_weights)**2).sum()
+            except KeyError:
+                reference_weights = None
+                # No error? Then we should be able to register the points exactly.
+                rescmp = 1  # TODO: What if target_weights finds the sigma keys?
+            
+            target_pts_sm = target_pts[:, idxs_target]
+            
+            try:
+                target_weights = np.vstack([1/target[self.sigma_x][idxs_target], 
+                                            1/target[self.sigma_y][idxs_target], 
+                                            1/target[self.sigma_z][idxs_target]])
+            except KeyError:
+                target_weights = None
+
+            # print(reference_pts.shape, target_pts_sm.shape, reference_weights, target_weights)
+
+            # print("reference_pts x: ", reference_pts[0,:10])
+            # print("target_pts_sm x: ", target_pts_sm[0,:10])
+
+            _, rotm, shift, res = absolute_orientation(reference_pts, 
+                                                       target_pts_sm, 
+                                                       reference_weights, 
+                                                       target_weights)
+            
+            # Keep track
+            rot_tot.append(rotm)
+            shift_tot.append(shift)
+
+            logger.debug(f"Iteration {k} res: {res} rscmp: {rescmp}")
+            # print(f"Iteration {k} res: {res} rscmp: {rescmp}")
+
+            if res <= rescmp:
+                # Residuals less than the sum of the error on the reference data set
+                break
+
+            # Update the full set of points to see which moved closer
+            target_pts = np.matmul(rotm, target_pts) + shift[:,None]
+        
+        # Create mapping strings
+        xstr, ystr, zstr = "x", "y", "z"
+        for r, s in zip(rot_tot, shift_tot):
+            xstrp=f"{r[0,0]}*({xstr})+{r[0,1]}*({ystr})+{r[0,2]}*({zstr})+{s[0]}"
+            ystrp=f"{r[1,0]}*({xstr})+{r[1,1]}*({ystr})+{r[1,2]}*({zstr})+{s[1]}"
+            zstrp=f"{r[2,0]}*({xstr})+{r[2,1]}*({ystr})+{r[2,2]}*({zstr})+{s[2]}"
+            xstr, ystr, zstr = xstrp, ystrp, zstrp
+
+        out = tabular.MappingFilter(target, x=xstr, y=ystr, z=zstr)
+        # out.addColumn('xp', target_pts[0,...])
+        # out.addColumn('yp', target_pts[1,...])
+        # out.addColumn('zp', target_pts[2,...])
+            
+        try:
+            out.mdh = MetaDataHandler.DictMDHandler(target.mdh)
+        except AttributeError:
+            pass
+
+        namespace[self.output] = out
+
