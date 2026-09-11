@@ -131,7 +131,7 @@ class DictChoiceStrEditDialog(wx.Dialog):
             self.cbKey.Enable(False)
 
         hsizer.Add(self.cbKey, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Table_Name:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -141,7 +141,7 @@ class DictChoiceStrEditDialog(wx.Dialog):
 
         hsizer.Add(self.tVal, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
 
         
         btSizer = wx.StdDialogButtonSizer()
@@ -157,7 +157,7 @@ class DictChoiceStrEditDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        vsizer.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        vsizer.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(vsizer)
         vsizer.Fit(self)
