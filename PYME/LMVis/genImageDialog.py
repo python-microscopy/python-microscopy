@@ -142,7 +142,7 @@ class GenImageDialog(wx.Dialog):
             self.cbTriangSoftRender.SetValue(True)
             sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
         if mode in ['3Dhistogram', '3Dgaussian', '3Dtriangles']:
             zThick = 50

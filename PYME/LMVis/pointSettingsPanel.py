@@ -82,7 +82,7 @@ class PointSettingsPanel(wx.Panel):
             self.chPointColour.SetSelection(colKeys.index(currentCol))
         
         
-        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.EXPAND, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
         

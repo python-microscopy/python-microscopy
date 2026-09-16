@@ -38,9 +38,9 @@ class LaserPanel(wx.Panel):
         self.bs1.Add(self.cbOn, 0, wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL, 2)
         
         self.bs1.AddStretchSpacer()
-        self.bs1.Add(wx.StaticLine(self, style=wx.LI_VERTICAL, size=(2,25)), 0,wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.bs1.Add(wx.StaticLine(self, style=wx.LI_VERTICAL, size=(2,25)), 0,wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         
-        self.bs1.Add(wx.StaticText(self, wx.ID_ANY, 'Power:'), 0,wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bs1.Add(wx.StaticText(self, wx.ID_ANY, 'Power:'), 0,wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         
         self.tcPower= wx.TextCtrl(self, wx.ID_ANY, '1', size=(40,-1))
         self.bs1.Add(self.tcPower, 0,wx.ALL | wx.ALIGN_CENTRE | wx.ALIGN_CENTER_VERTICAL, 2)
@@ -53,10 +53,10 @@ class LaserPanel(wx.Panel):
         self.bSetPower.Enable(self.laser.IsPowerControlable())
         
         self.bs1.AddStretchSpacer()
-        self.bs1.Add(wx.StaticLine(self, style=wx.LI_VERTICAL, size=(2,25)), 0,wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.bs1.Add(wx.StaticLine(self, style=wx.LI_VERTICAL, size=(2,25)), 0,wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         
         self.tcPulse= wx.TextCtrl(self, wx.ID_ANY, '0', size=(40,-1))
-        self.bs1.Add(self.tcPulse, 0,wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bs1.Add(self.tcPulse, 0,wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         self.tcPulse.Enable(not self.laser.IsOn())
         
         self.bPulse = wx.Button(self, wx.ID_ANY, 'Pulse', style=wx.BU_EXACTFIT)

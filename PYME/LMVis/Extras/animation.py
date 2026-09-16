@@ -299,7 +299,7 @@ class EditDialog(wx.Dialog):
 
         bt_sizer.Realize()
 
-        sizer1.Add(bt_sizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(bt_sizer, 0, wx.ALIGN_RIGHT | wx.ALL, 5)
 
         # set total size
         self.SetSizer(sizer1)

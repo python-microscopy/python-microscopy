@@ -30,18 +30,18 @@ class DelayPanel(wx.Panel):
         self.sl.SetTickFreq(25000)
         self.Bind(wx.EVT_SCROLL,self.on_slide)
         hsizer.Add(self.sl, 1, wx.ALL|wx.EXPAND, 2)
-        delay.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        delay.Add(hsizer, 0, wx.EXPAND, 0)
 
         
 
-        vsizer.Add(delay, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(delay, 0, wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.cb_highspeed = wx.CheckBox(self, wx.ID_ANY, 'High-Speed mode (no GUI update)')
         self.cb_highspeed.SetValue(self.delayer.high_speed_mode)
         self.cb_highspeed.Bind(wx.EVT_CHECKBOX, self.on_cb_highspeed)
 
-        vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.SetSizer(vsizer)
 

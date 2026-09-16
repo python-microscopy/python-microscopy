@@ -69,7 +69,7 @@ class AndorNeoPanel(wx.Panel):
 
         self.tCCDTemp = wx.TextCtrl(self, -1, '0', size=(30, -1))
         hsizer2.Add(self.tCCDTemp, 1, wx.wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        sbCooling.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbCooling.Add(hsizer2, 0, wx.EXPAND, 0)
 
         self.bSetTemp = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetTemp.Bind(wx.EVT_BUTTON, self.OnBSetTempButton)
@@ -85,30 +85,30 @@ class AndorNeoPanel(wx.Panel):
         self.tEMGain.Bind(wx.EVT_TEXT, self.OnEMGainTextChange)
         self.tEMGain.Bind(wx.EVT_TEXT_ENTER, self.OnBSetGainButton)
         self.tEMGain.Bind(wx.EVT_COMBOBOX, self.OnBSetGainButton)
-        hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT, 5)
 
         self.bSetGain = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetGain.Bind(wx.EVT_BUTTON, self.OnBSetGainButton)
-        hsizer2.Add(self.bSetGain, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer2.Add(self.bSetGain, 0, wx.EXPAND, 0)
 
-        sbEMGain.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbEMGain.Add(hsizer2, 0, wx.EXPAND, 0)
 
         self.stTrueEMGain = wx.StaticText(self, -1, '????')
         self.stTrueEMGain.SetForegroundColour(wx.RED)
-        sbEMGain.Add(self.stTrueEMGain, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbEMGain.Add(self.stTrueEMGain, 0, wx.EXPAND, 0)
 
-        hsizer.Add(sbEMGain, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer.Add(sbEMGain, 1, wx.EXPAND, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.cbShutter = wx.CheckBox(self, -1, u'Spurious Noise Filter')
         self.cbShutter.SetValue(False)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
-        vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+        vsizer.Add(self.cbShutter, 0, wx.TOP, 5)
 
         self.cbStaticBlemishCorrection = wx.CheckBox(self, -1, u'Static Blemish Correction')
         self.cbStaticBlemishCorrection.SetValue(False)
         self.cbStaticBlemishCorrection.Bind(wx.EVT_CHECKBOX, self.OnCbStaticBlemishCorrection)
-        vsizer.Add(self.cbStaticBlemishCorrection, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+        vsizer.Add(self.cbStaticBlemishCorrection, 0, wx.TOP, 5)
 
         self.SetSizer(vsizer)
 

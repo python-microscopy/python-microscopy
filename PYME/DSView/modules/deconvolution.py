@@ -405,7 +405,7 @@ class WienerDeconvolver(wx.Panel):
 
         sizer3.Add(self.fpPSF, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(self, -1, 'Offset:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -413,7 +413,7 @@ class WienerDeconvolver(wx.Panel):
 
         sizer3.Add(self.tOffset, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(self, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -421,7 +421,7 @@ class WienerDeconvolver(wx.Panel):
 
         sizer3.Add(self.tRegLambda, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.AddSpacer(10)
@@ -431,7 +431,7 @@ class WienerDeconvolver(wx.Panel):
 
         sizer3.Add(self.bCalculate, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
 
         self.SetSizerAndFit(sizer2)
         

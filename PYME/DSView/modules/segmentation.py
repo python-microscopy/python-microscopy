@@ -109,7 +109,7 @@ class SegmentationPanel(wx.Panel):
         btn = wx.Button(self, -1, 'Apply')
         btn.Bind(wx.EVT_BUTTON, self.OnApply)
 
-        sizer1.Add(btn, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btn, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
 #        btn = wx.Button(self, -1, 'Done')
 #        btn.Bind(wx.EVT_BUTTON, self.OnDone)

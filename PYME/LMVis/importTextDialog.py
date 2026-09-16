@@ -271,9 +271,9 @@ class ImportMatDialog(wx.Dialog):
 
         sizer2.Add(self.cbVarNames, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer1.Add(sizer2, 0, wx.ALL, 0)
 
-        sizer1.Add(wx.StaticText(self, -1, 'Field Names must evaluate to a list of field names present in the file,\n and should use "x", "y", "sig", "A"  and "error_x" to refer to the \nfitted position, std dev., amplitude, and error respectively.'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(wx.StaticText(self, -1, 'Field Names must evaluate to a list of field names present in the file,\n and should use "x", "y", "sig", "A"  and "error_x" to refer to the \nfitted position, std dev., amplitude, and error respectively.'), 0, wx.ALL, 5)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer2.Add(wx.StaticText(self, -1, 'Field Names:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -281,7 +281,7 @@ class ImportMatDialog(wx.Dialog):
 
         sizer2.Add(self.tFieldNames, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer1.Add(sizer2, 0, wx.ALL, 0)
 
         btSizer = wx.StdDialogButtonSizer()
 
@@ -296,7 +296,7 @@ class ImportMatDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

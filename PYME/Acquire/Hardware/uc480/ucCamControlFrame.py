@@ -44,16 +44,16 @@ class ucCamPanel(wx.Panel):
         self.sl.SetTickFreq(10)
         self.Bind(wx.EVT_SCROLL,self.onSlide)
         hsizer.Add(self.sl, 1, wx.ALL|wx.EXPAND, 2)
-        ucGain.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        ucGain.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.stGainFactor = wx.StaticText(self, -1, 'Gain Factor = %3.2f' % self.cam.GetGainFactor())
-        ucGain.Add(self.stGainFactor, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        ucGain.Add(self.stGainFactor, 0, wx.EXPAND, 0)
 
         self.stepc = wx.StaticText(self, -1, 'Electrons/Count = %3.2f' % (self.cam.noise_properties['ElectronsPerCount']))
-        ucGain.Add(self.stepc, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        ucGain.Add(self.stepc, 0, wx.EXPAND, 0)
 
 
-        vsizer.Add(ucGain, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(ucGain, 0, wx.EXPAND, 0)
 
         self.SetSizer(vsizer)
 

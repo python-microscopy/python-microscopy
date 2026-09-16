@@ -91,7 +91,7 @@ class UserErrorDialog(wx.Dialog):
         s_b.SetIcon(wx.ArtProvider.GetIcon(wx.ART_ERROR, client=wx.ART_MESSAGE_BOX, size=(32, 32)))
         hsizer.Add(s_b, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         hsizer.Add(wx.StaticText(self, label='%s' % exc_val), 1,
-                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL|wx.EXPAND, 2)
+                   wx.ALL | wx.EXPAND, 2)
         vsizer.Add(hsizer, 0, wx.ALL, 2)
         
         btnsizer = wx.StdDialogButtonSizer()

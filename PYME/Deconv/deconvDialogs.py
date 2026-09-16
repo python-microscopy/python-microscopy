@@ -384,7 +384,9 @@ class DeconvProgressPanel(wx.Panel):
 
         self.gProgress = wx.Gauge(self, -1, numIters)
 
-        sizer1.Add(self.gProgress, 5, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        # sizer1.Add(self.gProgress, 5, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(self.gProgress, 5, wx.EXPAND | wx.ALL, 5)
+
 
         #btSizer = wx.StdDialogButtonSizer()
 
@@ -395,7 +397,7 @@ class DeconvProgressPanel(wx.Panel):
 
         #btSizer.Realize()
 
-        sizer1.Add(btn, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
