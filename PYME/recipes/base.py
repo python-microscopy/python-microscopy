@@ -1202,7 +1202,7 @@ class Clip(Filter):
     """Clip an image to a given range"""
     
     min = Float(0)
-    max = Float(np.finfo(np.float32).max)
+    max = Float(float(np.finfo(np.float32).max))
     
     def applyFilter(self, data, chanNum, i, image0):
         return np.clip(data, self.min, self.max)
