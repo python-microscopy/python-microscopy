@@ -397,10 +397,10 @@ class SpoolController(object):
             free_storage = sum([n['Disk']['free'] for n in nodes])
             return free_storage / 1e9
         else:
-            from PYME.IO.FileUtils.freeSpace import get_free_space
+            from PYME.IO.FileUtils.freeSpace import get_free_space_bytes
             # avoid dirname property here so we can differ building
             # 'acquire-spool_subdirectories' to `start_spooling`
-            return get_free_space(self._dirname)/1e9
+            return get_free_space_bytes(self._dirname)/1e9
         
     def _update_series_counter(self):
         logger.debug('Updating series counter')
