@@ -68,7 +68,7 @@ class GaussFitter1D(object):
         max_ind = np.argmax(data)
         fwhm = np.sum(data > offset + 0.5 * amplitude)
         # amplitude, center, sigma, bx, b = parameters
-        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - data[0]), offset
+        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - position[0]), offset
 
     def fit(self, position, data):
         guess = self._calc_guess(position, data)
