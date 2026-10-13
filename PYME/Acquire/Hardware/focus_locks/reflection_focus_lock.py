@@ -288,6 +288,17 @@ class ReflectedLinePIDFocusLock(PID):
 
 
     @property
+    def sum_axis(self):
+        """int : frame axis summed over to generate the 1D profile which is fit.
+
+        Read-only - `peak_position`, the setpoint, and any subtraction profile
+        are all expressed along the other axis, so this cannot be changed once
+        the lock has been set up. Exposed so that UI code displaying the profile
+        can sum along the same axis as the lock itself.
+        """
+        return self._sum_axis
+
+    @property
     def fit_roi_size(self):
         return self._fit_roi_size
 
