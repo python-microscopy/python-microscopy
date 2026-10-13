@@ -182,7 +182,7 @@ class ReflectedLinePIDFocusLock(PID):
             t = time.time()
             self.on_frame()
             # throttle this to whatever we set cycle time to
-            time.sleep(max(self.sample_time - time.time() - t, 0))
+            time.sleep(max(self.sample_time - (time.time() - t), 0))
 
 
     def StartPolling(self):
