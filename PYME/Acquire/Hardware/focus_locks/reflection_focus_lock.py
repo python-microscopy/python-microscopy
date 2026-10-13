@@ -253,7 +253,7 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
-        self.set_auto_mode(~self.auto_mode)
+        self.EnableLock(not self.auto_mode)
 
     @webframework.register_endpoint('/ChangeSetpoint', output_is_json=False)
     def ChangeSetpoint(self, setpoint=None):
