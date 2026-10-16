@@ -154,7 +154,7 @@ def install_map(filename):
         sys.exit('aborting...')
 
     if not (source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']
-            and source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']):
+            and source.mdh['Analysis.valid.ROIWidth'] == source.mdh['Camera.ROIWidth']):
         logger.error('Partial (ROI based) maps cannot be installed to the default location')
         sys.exit(-1)
 
