@@ -329,7 +329,7 @@ def main():
     if args.dir is None:
         logger.info('installing in standard location...')
         
-        if im_dark.mdh.get('CameraMap.SubROI', False) or im_variance.mdh.get('CameraMap.subROI', False):
+        if im_dark.mdh.get('CameraMap.SubROI', False) or im_variance.mdh.get('CameraMap.SubROI', False):
             logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
             sys.exit(-1)
             
