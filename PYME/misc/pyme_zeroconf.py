@@ -24,7 +24,18 @@ import threading
 import logging
 logger = logging.getLogger(__name__)
 
-if zeroconf.__version__ >= '0.35':
+def _version_tuple(v):
+    """Convert a version string (e.g. '0.150.0') to a tuple of ints for comparison."""
+    parts = []
+    for p in v.split('.'):
+        digits = ''.join(c for c in p if c.isdigit()) # strip suffixes e.g. 'rc1', 'b2'
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts)
+
+# NB - compare numerically, string comparison fails for e.g. '0.150.0' >= '0.35'
+if _version_tuple(zeroconf.__version__) >= (0, 35):
     # new ServiceInfo class
 
     class PatchedServiceInfo(zeroconf.ServiceInfo):
