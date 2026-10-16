@@ -141,7 +141,7 @@ def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
         full_dark = mdh['Camera.ADOffset'] * np.ones(sensor_size)
         full_var = (mdh['Camera.ReadNoise'] ** 2) * np.ones(sensor_size)
         
-        mdh['CamerMap.Uniform'] = True
+        mdh['CameraMap.Uniform'] = True
 
     return full_dark, full_var, mdh
 
