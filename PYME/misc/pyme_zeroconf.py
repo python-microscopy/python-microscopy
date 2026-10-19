@@ -141,6 +141,10 @@ class ZCListener(object):
                     #info = zc.get_service_info(_type, name)
                     self.advertised_services[nm] = info
 
+    def update_service(self, zc, _type, name):
+        # fired when a service's records change. Re-query so we pick up any new address/port.
+        self.add_service(zc, _type, name)
+
     def list(self, filterby):
         with self._lock:
             return [k for k in self.advertised_services.keys() if filterby in k]
