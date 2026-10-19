@@ -1,5 +1,5 @@
 
-from PYME.Acquire.Hardware.Camera import Camera
+from PYME.Acquire.Hardware.Camera import Camera, CameraMapMixin
 from ids_peak import ids_peak as peak
 import logging
 import numpy as np
@@ -39,7 +39,7 @@ PIXEL_FORMATS = {
     # 16: 'Mono16',  # Only supported by uEye cameras (UI models, not e.g. U3)
 }
 
-class IDS_Camera(Camera):
+class IDS_Camera(Camera, CameraMapMixin):
     """
 
     Notes
@@ -526,6 +526,11 @@ class IDS_Camera(Camera):
 
     def GetSerialNumber(self):
         return self.serial_number
+
+    def GenStartMetadata(self, mdh):
+        Camera.GenStartMetadata(self, mdh)
+        if self.active:
+            self.fill_camera_map_metadata(mdh)
     
     def GetCCDTemp(self):
         if self._has_temperature:
