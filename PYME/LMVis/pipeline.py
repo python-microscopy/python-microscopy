@@ -812,7 +812,13 @@ class Pipeline(object):
         self.recipe._update_from_module_list(session_info['recipe'])
         self.recipe.execute()
 
-        self.selectDataSource(session_info['selected_datasource'])
+        sds = session_info['selected_datasource']
+        if sds in self.dataSources:
+            self.selectDataSource(sds)
+        else:
+            from PYME import pyme_warnings as warnings
+            warnings.warn("selected datasource '%s' from session file not available, falling back to an available one" % sds)
+            self.selectDataSource(next(iter(self.dataSources.keys()))) # arbitrarily pick the first ds in the list of keys
 
         self.Rebuild()
 
