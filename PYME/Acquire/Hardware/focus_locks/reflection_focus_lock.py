@@ -68,7 +68,7 @@ class GaussFitter1D(object):
         max_ind = np.argmax(data)
         fwhm = np.sum(data > offset + 0.5 * amplitude)
         # amplitude, center, sigma, bx, b = parameters
-        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - data[0]), offset
+        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - position[0]), offset
 
     def fit(self, position, data):
         guess = self._calc_guess(position, data)
@@ -182,7 +182,7 @@ class ReflectedLinePIDFocusLock(PID):
             t = time.time()
             self.on_frame()
             # throttle this to whatever we set cycle time to
-            time.sleep(max(self.sample_time - time.time() - t, 0))
+            time.sleep(max(self.sample_time - (time.time() - t), 0))
 
 
     def StartPolling(self):
@@ -253,7 +253,7 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
-        self.set_auto_mode(~self.auto_mode)
+        self.EnableLock(not self.auto_mode)
 
     @webframework.register_endpoint('/ChangeSetpoint', output_is_json=False)
     def ChangeSetpoint(self, setpoint=None):
