@@ -44,3 +44,38 @@ def test_peak_found_for_sum_axis(sum_axis):
 def test_invalid_sum_axis():
     with pytest.raises(ValueError):
         _make_lock(_stripe_frame(40.), sum_axis=2)
+        
+def test_toggle_lock_switches_both_ways():
+    """ToggleLock must be able to turn the lock off again.
+
+    A bitwise not was used here previously - ~True is -2 and ~False is -1, both
+    truthy, so the lock latched on.
+    """
+    lock = _make_lock(_stripe_frame(40.))
+    assert not lock.LockEnabled()
+
+    lock.ToggleLock()
+    assert lock.LockEnabled()
+
+    lock.ToggleLock()
+    assert not lock.LockEnabled()
+
+
+def test_toggle_lock_logs_offset_when_disabling():
+    """Disabling via ToggleLock should go through EnableLock's bookkeeping."""
+    lock = _make_lock(_stripe_frame(40.))
+    lock.ToggleLock()
+    lock.piezo.LogFocusCorrection.assert_not_called()
+
+    lock.ToggleLock()
+    lock.piezo.LogFocusCorrection.assert_called_once()
+
+
+def test_enable_lock_handles_string_false():
+    """`enable` arrives as a string over the REST interface."""
+    lock = _make_lock(_stripe_frame(40.))
+    lock.EnableLock(True)
+    assert lock.LockEnabled()
+
+    lock.EnableLock('False')
+    assert not lock.LockEnabled()

@@ -19,12 +19,18 @@ automated service discovery protocol
 import zeroconf
 import socket
 import time
+from packaging.version import Version
 #import Pyro.core
 import threading
 import logging
 logger = logging.getLogger(__name__)
 
-if zeroconf.__version__ >= '0.35':
+
+def _uses_new_service_info_api(version):
+    return Version(version) >= Version('0.35.0')
+
+
+if _uses_new_service_info_api(zeroconf.__version__):
     # new ServiceInfo class
 
     class PatchedServiceInfo(zeroconf.ServiceInfo):
@@ -140,6 +146,10 @@ class ZCListener(object):
                 with self._lock:
                     #info = zc.get_service_info(_type, name)
                     self.advertised_services[nm] = info
+
+    def update_service(self, zc, _type, name):
+        # fired when a service's records change. Re-query so we pick up any new address/port.
+        self.add_service(zc, _type, name)
 
     def list(self, filterby):
         with self._lock:

@@ -131,7 +131,9 @@ class FastGraphPanel(wx.Panel):
         h = (self.Size[1] - self.textSize - 2)*(1.0-((self.h - self.h.min())/(1.0*(self.h.max()-self.h.min() + .1))))
 
         maxy = self.Size[1] - self.textSize
-        pointlist = [(i+self.left_margin,h_i) for i, h_i in zip(range(len(h)), h)]
+        # NOTE: the coordinates must be ints. wxPython >= 4.2 silently declines to draw DrawLines given float coordinates
+        # nan_to_num guards the cast against non-finite data (int(nan) raises)
+        pointlist = [(i+self.left_margin, int(h_i)) for i, h_i in zip(range(len(h)), numpy.nan_to_num(h))]
         #pointlist = [(10,h[0])] + pointlist + [(self.Size[0], maxy)]
 
         dc.Clear()
