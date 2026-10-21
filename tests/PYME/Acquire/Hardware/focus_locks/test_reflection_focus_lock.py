@@ -26,6 +26,25 @@ def _make_lock(frame, **kwargs):
     return ReflectedLinePIDFocusLock(scope, piezo, trigger_failsafe=False, **kwargs)
 
 
+@pytest.mark.parametrize('sum_axis', [0, 1])
+def test_peak_found_for_sum_axis(sum_axis):
+    frame = _stripe_frame(40.3, stripe_axis=sum_axis)
+    lock = _make_lock(frame, sum_axis=sum_axis)
+    # default setpoint is the centre of the profile axis
+    assert lock.peak_position == 0.5 * frame.shape[1 - sum_axis]
+
+    lock.on_frame()
+    assert lock._lock_ok
+    assert lock.peak_position == pytest.approx(40.3, abs=0.05)
+
+    lock.SetSubtractionProfile()
+    assert lock.subtraction_profile.shape == (frame.shape[1 - sum_axis],)
+
+
+def test_invalid_sum_axis():
+    with pytest.raises(ValueError):
+        _make_lock(_stripe_frame(40.), sum_axis=2)
+        
 def test_toggle_lock_switches_both_ways():
     """ToggleLock must be able to turn the lock off again.
 
