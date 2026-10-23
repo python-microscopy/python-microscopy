@@ -377,7 +377,7 @@ class NodeServer(object):
 
     def _poll(self):
         while self._do_poll:
-            if self._distributor_url is not None:
+            if self.distributor_url is not None:
                 #self._announce()
                 self._do_handins()
                 #self._update_tasks()
@@ -385,7 +385,7 @@ class NodeServer(object):
 
     def _poll_tasks(self):
         while self._do_poll:
-            if self._distributor_url is not None:
+            if self.distributor_url is not None:
                 self._update_tasks()
             time.sleep(1.0)
 
