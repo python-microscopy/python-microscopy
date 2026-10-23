@@ -46,6 +46,7 @@ Miscellaneous
 * Nikon Ti stand
 * 3D Connexion "Space Navigator" 3D mouse
 * Micro Photon Devices Picosecond Delayer
+* Siglent SDG Arbitrary Waveform Generator (tested on SDG 2042 X)
 
 .. note::
 

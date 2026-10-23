@@ -163,12 +163,9 @@ class H5RFile(object):
             if (tablename == 'PZFImageData'):
                 from PYME.IO import PZFFormat
                 #special case  for pzf data - also build an index table
-                frameNum = PZFFormat.load_header(data)['FrameNum']
-
-                # modern numpy (> ~1.24) gives us an array rather than a scalar for frameNum
-                # cast to an int to be safe ...
-                # FIXME - this appears to be an undocumented numpy regression / change - should we create an issue?
-                frameNum = int(frameNum)
+                # load_header returns a length-1 structured array, so index explicitly before casting to int
+                # (int() on a 1-element, 1-D array was deprecated in numpy 1.25 and now raises a TypeError)
+                frameNum = int(PZFFormat.load_header(data)['FrameNum'][0])
 
                 #logger.debug('framenum: %s', frameNum)
                 

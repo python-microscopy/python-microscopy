@@ -88,8 +88,10 @@ class OffsetPiezo(PiezoBase):
         with self._move_lock:
             target = self.GetTargetPos(0)
             # correct the offset; positive means push base pos higher than offsetpiezo pos
-            correction = max(min(self.basePiezo.max_travel - (target + self.offset), 
-                                 correction), -(target + self.offset))
+            # Clamp the correction so that the base piezo stays within its limits.
+            base_pos = target + self.offset
+            correction = max(min(self.basePiezo.GetMax(0) - base_pos, correction),
+                             self.basePiezo.GetMin(0) - base_pos)
             self.offset += correction
             # self.MoveTo(0, target)  # move the base piezo to correct position
             self.basePiezo.MoveTo(0, target + self.offset, True)
@@ -113,11 +115,13 @@ class OffsetPiezo(PiezoBase):
     
     @webframework.register_endpoint('/GetMaxOffset', output_is_json=False)
     def GetMaxOffset(self):
-        return self.basePiezo.max_travel - self.GetTargetPos()
-    
+        # see note in CorrectOffset on GetMin()/GetMax() vs the `max_travel` attribute
+        return self.basePiezo.GetMax(0) - self.GetTargetPos()
+
     @webframework.register_endpoint('/GetMinOffset', output_is_json=False)
     def GetMinOffset(self):
-        return - self.GetTargetPos()
+        # see note in CorrectOffset - this previously assumed a base piezo minimum of 0
+        return self.basePiezo.GetMin(0) - self.GetTargetPos()
 
 
 import requests
