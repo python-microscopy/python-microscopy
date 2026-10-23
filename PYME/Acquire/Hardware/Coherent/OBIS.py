@@ -34,6 +34,7 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class CoherentOBISLaser(Laser):
     powerControlable = True
+    AVAILABLE_MODES = ['CWP', 'CWC', 'DIGITAL', 'ANALOG', 'MIXED']
 
     def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, reply_ok=False, **kwargs):
         """
@@ -233,10 +234,8 @@ class CoherentOBISLaser(Laser):
 
     def registerStateHandlers(self, scopeState):
         Laser.registerStateHandlers(self, scopeState)
-        scopeState.registerHandler('Lasers.%s.Mode' % self.name, lambda: self._mode, self.SetMode)
-        scopeState.registerHandler('Lasers.%s.AvailableModes' % self.name,
-                                   lambda: ['CWP', 'CWC', 'DIGITAL', 'ANALOG', 'MIXED'])
-
+        scopeState.registerHandler('Lasers.%s.Mode' % self.name, lambda: self._mode, self.SetMode,
+                                   permitted_values=self.AVAILABLE_MODES)
 
     def __del__(self):
         self.Close()

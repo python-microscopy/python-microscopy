@@ -29,6 +29,7 @@ import wx
 from PYME import config
 from numpy import log2
 import re
+from PYME.Acquire.microscope import ANY_VALUE
 
 SCALING_MODES = {
     'log': 1,
@@ -94,12 +95,15 @@ class LaserSliders(wx.Panel):
             sz.Add(l, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
 
             # add a mode selector for lasers which support switching modulation modes
-            if 'Lasers.%s.Mode' % laserName in self.scopeState.keys():
-                ch = wx.Choice(self, -1, choices=self.scopeState['Lasers.%s.AvailableModes' % laserName])
-                ch.SetStringSelection(self.scopeState['Lasers.%s.Mode' % laserName])
-                ch.Bind(wx.EVT_CHOICE, self.on_mode)
-                self.modeChoices[laserName] = ch
-                sz.Add(ch, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+            mode_key = 'Lasers.%s.Mode' % laserName
+            if mode_key in self.scopeState.keys():
+                modes = self.scopeState.get_permitted_values(mode_key)
+                if modes is not ANY_VALUE:
+                    ch = wx.Choice(self, -1, choices=list(modes))
+                    ch.SetStringSelection(self.scopeState[mode_key])
+                    ch.Bind(wx.EVT_CHOICE, self.on_mode)
+                    self.modeChoices[laserName] = ch
+                    sz.Add(ch, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
 
             sizer_2.Add(sz, 1, wx.EXPAND, 0)
 
