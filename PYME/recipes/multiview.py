@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
+from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI, Enum
 import numpy as np
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
@@ -108,7 +108,7 @@ class FindClumps(ModuleBase):
         localizations as PYME.IO.Tabular types
     time_gap_tolerance : traits.Int
         Number of frames which a localizations is allowed to be missing and still be considered the same molecule if it
-        reappears
+        reappears. Currently this is ~off by 2, so time_gap_tolerance=1 means link only on the same frame
     radius_scale : traits.Float
         Factor by which the localization precision is multiplied to determine the search radius for clustering. The
         default of 2 sigma means that we link ~95% of the points which should be linked (if Gaussian statistics hold)
@@ -281,6 +281,13 @@ class CalibrateShifts(ModuleBase):
         localizations as PYME.IO.Tabular types
     search_radius_nm : traits.Float
         radius within which bead localizations should be clumped if the bead appears in all channels. Units of nm.
+    mode : str
+        `average first` averages all points found within `search_radius_nm` by
+        channel before generating shifts between clumps containing all
+        multiview channels. `per-frame` pairs localizations between points on
+        the 0th channel and other channels on the same frame only, and does not
+        require all channels to be present to generate a valid shift at a given
+        location.
 
     Returns
     -------
@@ -294,48 +301,20 @@ class CalibrateShifts(ModuleBase):
     input_name = Input('folded')
 
     search_radius_nm = Float(250.)
+    mode = Enum(['average first', 'per-frame'])
 
     output_name = Output('shiftmap')
 
     def execute(self, namespace):
         from PYME.Analysis.points import twoColour
         from PYME.Analysis.points import multiview
-        from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.input_name]
 
         try:  # make sure we're looking at multiview data
-            n_chan = inp.mdh['Multiview.NumROIs']
+            n_chan = inp.mdh['Multiview.NumROIs']  # TODO- use Multiview.ActiveViews + index appropriately
         except AttributeError:
             raise AttributeError('multiview metadata is missing or incomplete')
-
-        # sort in frame order
-        I = inp['tIndex'].argsort()
-        x_sort, y_sort = inp['x'][I], inp['y'][I]
-        chan_sort = inp['multiviewChannel'][I]
-
-        clump_id, keep = multiview.pair_molecules(inp['tIndex'][I], x_sort, y_sort, chan_sort,
-                                                  self.search_radius_nm * np.ones_like(x_sort),
-                                                  appear_in=np.arange(n_chan), n_frame_sep=inp['tIndex'].max(),
-                                                  pix_size_nm=inp.mdh.voxelsize_nm.x)
-
-        # only look at the clumps which showed up in all channels
-        x = x_sort[keep]
-        y = y_sort[keep]
-        chan = chan_sort[keep]
-        clump_id = clump_id[keep]
-
-        # Generate raw shift vectors (map of displacements between channels) for each channel
-        mol_list = np.unique(clump_id)
-        n_mols = len(mol_list)
-        if n_mols < 3:
-            raise ValueError('Need at 3 clusters containing points from each channel - try increasing search radius')
-
-        dx = np.zeros((n_chan - 1, n_mols))
-        dy = np.zeros_like(dx)
-        dx_err = np.zeros_like(dx)
-        dy_err = np.zeros_like(dx)
-        x_clump, y_clump, x_std, y_std, x_shifted, y_shifted = [], [], [], [], [], []
 
         shift_map_dtype = [('mx', '<f4'), ('mx2', '<f4'), ('mx3', '<f4'),  # x terms
                            ('my', '<f4'), ('my2', '<f4'), ('my3', '<f4'),  # y terms
@@ -343,48 +322,93 @@ class CalibrateShifts(ModuleBase):
                            ('x0', '<f4')]  # 0th order shift
 
         shift_maps = np.zeros(2*(n_chan - 1), dtype=shift_map_dtype)
-        mdh = NestedClassMDHandler(inp.mdh)
+        mdh = MetaDataHandler.DictMDHandler(inp.mdh)
         mdh['Multiview.shift_map.legend'] = {}
+        
+        if self.mode == 'average first':
+            # sort in frame order
+            I = inp['tIndex'].argsort()
+            x_sort, y_sort = inp['x'][I], inp['y'][I]
+            chan_sort = inp['multiviewChannel'][I]
 
-        for ii in range(n_chan):
-            chan_mask = (chan == ii)
-            x_chan = np.zeros(n_mols)
-            y_chan = np.zeros(n_mols)
-            x_chan_std = np.zeros(n_mols)
-            y_chan_std = np.zeros(n_mols)
+            clump_id, keep = multiview.pair_molecules(inp['tIndex'][I], x_sort, y_sort, chan_sort,
+                                                    self.search_radius_nm * np.ones_like(x_sort),
+                                                    appear_in=np.arange(n_chan), n_frame_sep=inp['tIndex'].max(),
+                                                    pix_size_nm=inp.mdh.voxelsize_nm.x)
 
-            for ind in range(n_mols):
-                # merge clumps within channels
-                clump_mask = np.where(np.logical_and(chan_mask, clump_id == mol_list[ind]))
-                x_chan[ind] = x[clump_mask].mean()
-                y_chan[ind] = y[clump_mask].mean()
-                x_chan_std[ind] = x[clump_mask].std()
-                y_chan_std[ind] = y[clump_mask].std()
+            # only look at the clumps which showed up in all channels
+            x = x_sort[keep]
+            y = y_sort[keep]
+            chan = chan_sort[keep]
+            clump_id = clump_id[keep]
 
-            x_clump.append(x_chan)
-            y_clump.append(y_chan)
-            x_std.append(x_chan_std)
-            y_std.append(y_chan_std)
+            # Generate raw shift vectors (map of displacements between channels) for each channel
+            mol_list = np.unique(clump_id)
+            n_mols = len(mol_list)
+            if n_mols < 3:
+                raise ValueError('Need at 3 clusters containing points from each channel - try increasing search radius')
 
-            if ii > 0:
-                dx[ii - 1, :] = x_clump[0] - x_clump[ii]
-                dy[ii - 1, :] = y_clump[0] - y_clump[ii]
-                dx_err[ii - 1, :] = np.sqrt(x_std[ii] ** 2 + x_std[0] ** 2)
-                dy_err[ii - 1, :] = np.sqrt(y_std[ii] ** 2 + y_std[0] ** 2)
-                # generate shiftmap between ii-th channel and the 0th channel
-                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(x_clump[0], y_clump[0], dx[ii - 1, :],
-                                                                          dy[ii - 1, :], dx_err[ii - 1, :],
-                                                                          dy_err[ii - 1, :])
-                # store shiftmaps in structured array
-                mdh['Multiview.shift_map.legend']['Chan0%s.X' % ii] = 2*(ii - 1)
-                mdh['Multiview.shift_map.legend']['Chan0%s.Y' % ii] = 2*(ii - 1) + 1
+            dx = np.zeros((n_chan - 1, n_mols))
+            dy = np.zeros_like(dx)
+            dx_err = np.zeros_like(dx)
+            dy_err = np.zeros_like(dx)
+            x_clump, y_clump, x_std, y_std, x_shifted, y_shifted = [], [], [], [], [], []
+
+            for ii in range(n_chan):
+                chan_mask = (chan == ii)
+                x_chan = np.zeros(n_mols)
+                y_chan = np.zeros(n_mols)
+                x_chan_std = np.zeros(n_mols)
+                y_chan_std = np.zeros(n_mols)
+
+                for ind in range(n_mols):
+                    # merge clumps within channels
+                    clump_mask = np.where(np.logical_and(chan_mask, clump_id == mol_list[ind]))
+                    x_chan[ind] = x[clump_mask].mean()
+                    y_chan[ind] = y[clump_mask].mean()
+                    x_chan_std[ind] = x[clump_mask].std()
+                    y_chan_std[ind] = y[clump_mask].std()
+
+                x_clump.append(x_chan)
+                y_clump.append(y_chan)
+                x_std.append(x_chan_std)
+                y_std.append(y_chan_std)
+
+                if ii > 0:
+                    dx[ii - 1, :] = x_clump[0] - x_clump[ii]
+                    dy[ii - 1, :] = y_clump[0] - y_clump[ii]
+                    dx_err[ii - 1, :] = np.sqrt(x_std[ii] ** 2 + x_std[0] ** 2)
+                    dy_err[ii - 1, :] = np.sqrt(y_std[ii] ** 2 + y_std[0] ** 2)
+                    # generate shiftmap between ii-th channel and the 0th channel
+                    dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(x_clump[0], y_clump[0], dx[ii - 1, :],
+                                                                            dy[ii - 1, :], dx_err[ii - 1, :],
+                                                                            dy_err[ii - 1, :])
+                    # store shiftmaps in structured array
+                    mdh['Multiview.shift_map.legend']['Chan0%s.X' % ii] = 2*(ii - 1)
+                    mdh['Multiview.shift_map.legend']['Chan0%s.Y' % ii] = 2*(ii - 1) + 1
+                    for ki in range(len(shift_map_dtype)):
+                        k = shift_map_dtype[ki][0]
+                        shift_maps[2*(ii - 1)][k] = spx.__getattribute__(k)
+                        shift_maps[2*(ii - 1) + 1][k] = spy.__getattribute__(k)
+        else:
+            # calculate shifts from each frame
+            from PYME.IO.tabular import SelectionFilter
+            chan0 = SelectionFilter(inp, inp['multiviewChannel'] == 0)
+            for ind in range(1, n_chan):
+                other = SelectionFilter(inp, inp['multiviewChannel'] == ind)
+                xc, yc, dx, dy, dxerr, dyerr = multiview.raw_shifts_by_frame(chan0['x'], chan0['y'], chan0['tIndex'], chan0['error_x'], chan0['error_y'],
+                                                                                other['x'], other['y'], other['tIndex'], other['error_x'], other['error_y'],
+                                                                                self.search_radius_nm)
+                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xc, yc, dx, dy, dxerr, dyerr)
+
+                # add into structured array, marking index in metadata
+                mdh['Multiview.shift_map.legend']['Chan0%s.X' % ind] = 2*(ind - 1)
+                mdh['Multiview.shift_map.legend']['Chan0%s.Y' % ind] = 2*(ind - 1) + 1
                 for ki in range(len(shift_map_dtype)):
                     k = shift_map_dtype[ki][0]
-                    shift_maps[2*(ii - 1)][k] = spx.__getattribute__(k)
-                    shift_maps[2*(ii - 1) + 1][k] = spy.__getattribute__(k)
-
-
-                # shift_maps['Chan0%s.X' % ii], shift_maps['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
+                    shift_maps[2*(ind - 1)][k] = spx.__getattribute__(k)
+                    shift_maps[2*(ind - 1) + 1][k] = spy.__getattribute__(k)
+        
 
         mdh['Multiview.shift_map.model'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 

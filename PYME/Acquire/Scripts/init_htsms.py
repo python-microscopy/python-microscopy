@@ -256,6 +256,23 @@ def chained_analysis(main_frame, scope):
     defaults['htsms-flow'] = RuleChain([get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)])
     defaults['htsms-staggered'] = RuleChain([get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)])
 
+    # calibrations
+    mdh = DictMDHandler(mdh)
+    mdh['Analysis.subtractBackground'] = False
+    mdh['Analysis.GPUPCTBackground'] = False
+    mdh['Analysis.BGRange'] = [-0, 0]
+    mdh['Analysis.PCTBackground'] = 0
+    mdh['Analysis.StartAt'] = 0
+    reg_loc_tile = get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)
+    
+    reg_rec = os.path.join(rec_dir, 'shiftmaps-from-tiled-beads.yaml')
+    with open(reg_rec) as f:
+        reg_rec = f.read()
+    reg_rec_tile = get_rule_tile(RecipeRuleFactory)(recipe=reg_rec)
+    defaults['htsms-cal-registration'] = RuleChain([reg_loc_tile,
+                                                    reg_rec_tile])
+
+
     SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
 @init_gui('Tiling')
