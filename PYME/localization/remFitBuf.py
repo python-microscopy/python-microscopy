@@ -169,8 +169,10 @@ class CameraInfoManager(object):
         try:
             map = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
         except:
-            fn = getFullExistingFilename(mapName)
-            map = ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+            from PYME.IO import unifiedIO
+            # resolve pyme-cluster:// URIs to a local (or temporary) file, as the tiff loader needs a real filename
+            with unifiedIO.local_or_temp_filename(mapName) as fn:
+                map = np.array(ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze()) #this should handle .tif, .h5, and a few others
 
         return map
 
