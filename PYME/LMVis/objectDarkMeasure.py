@@ -27,7 +27,7 @@ def fitDarktimes(t):
     if nts > NTMIN:
         # now make a cumulative histogram from these
         cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
-        cumuy = (1.0+np.arange(nts))/np.float(nts)
+        cumuy = (1.0+np.arange(nts))/float(nts)
         maxtd = dtg.max()
         
         # generate histograms 2nd way
