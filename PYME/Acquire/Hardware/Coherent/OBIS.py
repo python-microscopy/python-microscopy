@@ -61,12 +61,15 @@ class CoherentOBISLaser(Laser):
 
 
         time.sleep(1)
-
+        
+        self.is_on = False
         self.power = 0
         self.SetPower(init_power)
+        self.mode=0
+        self.SetOpMode(self.mode)
         self.MIN_POWER = 1e3 * float(self.query(b'SOUR:POW:LIM:LOW?\r\n', lines_expected=1)[0])
         self.MAX_POWER = 1e3 * float(self.query(b'SOUR:POW:LIM:HIGH?\r\n', lines_expected=1)[0])
-        self.is_on = False
+        
 
         # self.query(b'SYST:COMM:HAND OFF\r\n', lines_expected=0)
 
@@ -137,6 +140,35 @@ class CoherentOBISLaser(Laser):
 
     def GetPower(self):
         return self.power
+
+    def SetOpMode(self,mode):
+        """
+        mode = 0: CWP, CW with constant power
+        mode = 1: digital modulation
+        mode = 2: analog modulation
+        
+        LX model can change while on, LS must turn off first - here just turning off first for all
+
+        """
+        if self.is_on:
+            turn_back_on=True
+        else:
+            turn_back_on=False
+
+        self.TurnOff()
+
+        if mode==0:
+            self.query(b'SOUR:AM:INT CWP\r\n',lines_expected=0)
+        elif mode==1:
+            self.query(b'SOUR:AM:EXT DIG\r\n',lines_expected=0)
+        elif mode==2:
+            self.query(b'SOUR:AM:EXT ANAL\r\n',lines_expected=0)
+        else:
+            print('invalid mode')
+        self.opMode=mode
+
+        if turn_back_on:
+            self.TurnOn()
 
     def Close(self):
         print('Shutting down %s' % self.name)
