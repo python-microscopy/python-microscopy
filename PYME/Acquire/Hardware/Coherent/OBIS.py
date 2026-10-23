@@ -34,6 +34,7 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class CoherentOBISLaser(Laser):
     powerControlable = True
+    AVAILABLE_MODES = ['CWP', 'CWC', 'DIGITAL', 'ANALOG', 'MIXED']
 
     def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, reply_ok=False, **kwargs):
         """
@@ -67,6 +68,7 @@ class CoherentOBISLaser(Laser):
         self.MIN_POWER = 1e3 * float(self.query(b'SOUR:POW:LIM:LOW?\r\n', lines_expected=1)[0])
         self.MAX_POWER = 1e3 * float(self.query(b'SOUR:POW:LIM:HIGH?\r\n', lines_expected=1)[0])
         self.is_on = False
+        self._mode = self.GetMode()
 
         # self.query(b'SYST:COMM:HAND OFF\r\n', lines_expected=0)
 
@@ -142,6 +144,98 @@ class CoherentOBISLaser(Laser):
         print('Shutting down %s' % self.name)
         self.TurnOff()
         time.sleep(.1)
+    
+    def GetMode(self):
+        """
+        Returns
+        -------
+        mode: str
+            Current modulation mode as reported by the laser, one of 'CWP', 'CWC',
+            'DIGITAL', 'ANALOG' or 'MIXED'
+        """
+        return self.query(b'SOUR:AM:SOUR?\r\n', lines_expected=1)[0].decode().strip()
+
+    def SetAnalog(self):
+        """
+        Switch to external analog modulation. If not already in analog mode, the laser
+        is turned off first, as mode changes are unreliable while emitting. Output power
+        is then set by the analog input voltage rather than SetPower.
+        """
+        if self.GetMode() == 'ANALOG':
+            return
+        self.TurnOff()
+        self.query(b'SOUR:AM:EXT ANAL\r\n', lines_expected=0)
+        self._mode = 'ANALOG'
+
+    def SetDigital(self):
+        """
+        Switch to external digital modulation. If not already in digital mode, the laser
+        is turned off first, as mode changes are unreliable while emitting. Output is then
+        switched between off and the SetPower level by the digital input.
+        """
+        if self.GetMode() == 'DIGITAL':
+            return
+        self.TurnOff()
+        self.query(b'SOUR:AM:EXT DIG\r\n', lines_expected=0)
+        self._mode = 'DIGITAL'
+
+    def SetMixed(self):
+        """
+        Switch to external mixed (digital and analog) modulation. If not already in mixed
+        mode, the laser is turned off first, as mode changes are unreliable while emitting.
+        """
+        if self.GetMode() == 'MIXED':
+            return
+        self.TurnOff()
+        self.query(b'SOUR:AM:EXT MIX\r\n', lines_expected=0)
+        self._mode = 'MIXED'
+
+    def SetCW(self):
+        """
+        Switch to CW constant power mode. If not already in CW mode, the laser is
+        turned off first, as mode changes are unreliable while emitting.
+        """
+        if self.GetMode() == 'CWP':
+            return
+        self.TurnOff()
+        self.query(b'SOUR:AM:INT CWP\r\n', lines_expected=0)
+        self._mode = 'CWP'
+
+    def SetCWCurrent(self):
+        """
+        Switch to CW constant current mode. If not already in constant current mode, the
+        laser is turned off first, as mode changes are unreliable while emitting.
+        """
+        if self.GetMode() == 'CWC':
+            return
+        self.TurnOff()
+        self.query(b'SOUR:AM:INT CWC\r\n', lines_expected=0)
+        self._mode = 'CWC'
+    
+    def SetMode(self, mode):
+        """
+        Parameters
+        ----------
+        mode: str
+            One of 'CWP', 'CWC', 'DIGITAL', 'ANALOG' or 'MIXED'
+        """
+        if mode == 'CWP':
+            self.SetCW()
+        elif mode == 'CWC':
+            self.SetCWCurrent()
+        elif mode == 'DIGITAL':
+            self.SetDigital()
+        elif mode == 'ANALOG':
+            self.SetAnalog()
+        elif mode == 'MIXED':
+            self.SetMixed()
+        else:
+            raise ValueError('Unknown mode %s' % mode)
+
+    def registerStateHandlers(self, scopeState):
+        Laser.registerStateHandlers(self, scopeState)
+        scopeState.registerHandler('Lasers.%s.Mode' % self.name, lambda: self._mode, self.SetMode,
+                                   permitted_values=self.AVAILABLE_MODES)
 
     def __del__(self):
         self.Close()
