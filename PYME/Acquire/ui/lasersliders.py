@@ -29,6 +29,7 @@ import wx
 from PYME import config
 from numpy import log2
 import re
+from PYME.Acquire.microscope import ANY_VALUE
 
 SCALING_MODES = {
     'log': 1,
@@ -66,6 +67,7 @@ class LaserSliders(wx.Panel):
         self.sliders = []
         self.labels = []
         self.buttons = []
+        self.modeChoices = {}  # only for lasers which register a 'Lasers.<name>.Mode' state
         self.sliding = False
         self.mode = SCALING_MODES[config.get('laser-slider-scaling', default='log')]
         
@@ -90,6 +92,17 @@ class LaserSliders(wx.Panel):
             l = wx.StaticText(self, -1, '100.0')
             self.labels.append(l)
             sz.Add(l, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+            # add a mode selector for lasers which support switching modulation modes
+            mode_key = 'Lasers.%s.Mode' % laserName
+            if mode_key in self.scopeState.keys():
+                modes = self.scopeState.get_permitted_values(mode_key)
+                if modes is not ANY_VALUE:
+                    ch = wx.Choice(self, -1, choices=list(modes))
+                    ch.SetStringSelection(self.scopeState[mode_key])
+                    ch.Bind(wx.EVT_CHOICE, self.on_mode)
+                    self.modeChoices[laserName] = ch
+                    sz.Add(ch, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
 
             sizer_2.Add(sz, 1, wx.EXPAND, 0)
 
@@ -190,6 +203,11 @@ class LaserSliders(wx.Panel):
         laserName = self.laserNames[self.buttons.index(b)]
         self.scopeState.setItem('Lasers.%s.On' % laserName, b.GetValue())
 
+    def on_mode(self, event):
+        ch = event.GetEventObject()
+        for laserName, c in self.modeChoices.items():
+            if c is ch:
+                self.scopeState['Lasers.%s.Mode' % laserName] = ch.GetStringSelection()
 
 
 
@@ -220,6 +238,11 @@ class LaserSliders(wx.Panel):
                     self.buttons[ind].SetBackgroundColour("red")
                 else:
                     self.buttons[ind].SetBackgroundColour(wx.NullColour)
+
+            for laserName, ch in self.modeChoices.items():
+                laserMode = self.scopeState['Lasers.%s.Mode' % laserName]
+                if ch.GetStringSelection() != laserMode:
+                    ch.SetStringSelection(laserMode)
 
         for laserName, cb in zip(self.switchedLaserNames, self.cBoxes):
             cb.SetValue(self.scopeState['Lasers.%s.On' % laserName])
@@ -351,7 +374,3 @@ class LaserSliders_(wx.Panel):
                 p = L.power
                 self.sliders[ind].SetValue(round(log2(max(p*1024/L.MAX_POWER, 1))))
                 self.labels[ind].SetLabel(self.laserNames[ind] + ' - %3.2f'%(100*p))
-
-            
-
-
