@@ -508,17 +508,37 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             individual files
         fullImage : bool, optional
             whether to export the full image even if it is clipped in the GUI, by default True
-        FIXME - make this work with time series / 5D image data model.
+
+        Notes
+        -----
+        Iterates over whichever of z or t is non-singleton. If both z and t are non-singleton, files are suffixed
+        with _t%d_z%d.
         """
         import os
         filestub, ext = os.path.splitext(filename)
-        for ind in range(self.do.ds.shape[2]):
-            self.do.zp = ind
+        size_z, size_t = self.do.ds.shape[2], self.do.ds.shape[3]
+
+        def _grab(fn):
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-            self.GrabPNG(filestub + '_%d' % ind + ext, fullImage)
+            self.GrabPNG(fn, fullImage)
+
+        if size_t > 1 and size_z > 1:
+            for t in range(size_t):
+                self.do.tp = t
+                for z in range(size_z):
+                    self.do.zp = z
+                    _grab(filestub + '_t%d_z%d' % (t, z) + ext)
+        elif size_t > 1:
+            for t in range(size_t):
+                self.do.tp = t
+                _grab(filestub + '_%d' % t + ext)
+        else:
+            for z in range(size_z):
+                self.do.zp = z
+                _grab(filestub + '_%d' % z + ext)
         
     def GrabPNGToBuffer(self, fullImage=True):
         '''Get PNG data in a buffer (rather than writing directly to file)'''
