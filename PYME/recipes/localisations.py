@@ -674,8 +674,9 @@ class DBSCANClustering(ModuleBase):
         return ['columns']
         
     def _view_items(self, params=None):
+        import ast
         from traitsui.api import Item, TextEditor
-        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=List(str))),
+        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ast.literal_eval)),
                     Item('searchRadius'),
                     Item('minClumpSize'),
                     Item('multithreaded'),
