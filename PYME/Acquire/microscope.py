@@ -57,12 +57,14 @@ logger = logging.getLogger(__name__)
 
 from contextlib import contextmanager
 
+ANY_VALUE = object()
+
 #class DummyJoystick(object):
 #    def enable(*args, **kwargs):
 #        pass
 
 class StateHandler(object):
-    def __init__(self, key, getFcn=None, setFcn=None, needCamRestart = False):
+    def __init__(self, key, getFcn=None, setFcn=None, needCamRestart = False, permitted_values=ANY_VALUE):
         """Define a state-change handler for a give state key, based on supplied
         get and set functions which interact with the underlying hardware.
         
@@ -86,11 +88,14 @@ class StateHandler(object):
         needCamRestart : bool
             Does this absolutely need a camera restart (e.g. we are changing which 
             camera we are using). Will override other preferences.
+        permitted_values : object
+            The permitted values for this state key, or ANY_VALUE if unrestricted.
         
         """
         self.getValue = getFcn
         self.setFcn = setFcn
         self.key = key
+        self.permitted_values = permitted_values
         
         self.needCamRestart = needCamRestart
         
@@ -261,6 +266,10 @@ class StateManager(object):
         
     def keys(self):
         return self._stateHandlers.keys()
+
+    def get_permitted_values(self, key):
+        """Return the permitted values for a state key."""
+        return self._stateHandlers[key].permitted_values
         
     def __repr__(self):
         s = 'StateManager:\n'
@@ -269,7 +278,7 @@ class StateManager(object):
             
         return s
         
-    def registerHandler(self, key, getFcn = None, setFcn=None, needCamRestart = False):
+    def registerHandler(self, key, getFcn = None, setFcn=None, needCamRestart = False, **kwargs):
         """Register a harware key and the ascociated handlers
         
         Parameters
@@ -288,6 +297,8 @@ class StateManager(object):
         needCamRestart : bool
             Does this absolutely need a camera restart (e.g. we are changing which 
             camera we are using). Will override other preferences.
+        **kwargs
+            Additional keyword arguments passed to the StateHandler.
             
         Notes
         -----
@@ -302,7 +313,7 @@ class StateManager(object):
           switches/shutters as well as )
         
         """
-        self._stateHandlers[key] = StateHandler(key, getFcn, setFcn, needCamRestart)
+        self._stateHandlers[key] = StateHandler(key, getFcn, setFcn, needCamRestart, **kwargs)
         
     def registerChangeListener(self, key, callback):
         """ Registers a function to be called when the state of a particular

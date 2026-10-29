@@ -15,7 +15,8 @@ except ImportError:
     from http import cookies
 
 import json
-    
+import inspect
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -359,7 +360,18 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
         
     def add_endpoints(self, cls, prefix=''):
         for a in dir(cls):
-            func = getattr(cls, a, None)
-            endpoint_path = getattr(func, '_expose_path', None)
+            # NOTE: look the attribute up statically so that we do not invoke properties (and any
+            # side-effects or errors they might have) merely by scanning for endpoints. A property
+            # which raises anything other than AttributeError would otherwise abort registration.
+            try:
+                attr = inspect.getattr_static(cls, a)
+            except AttributeError:
+                continue
+
+            # unwrap static/class methods, which hide the decorated function behind __func__
+            attr = getattr(attr, '__func__', attr)
+
+            endpoint_path = getattr(attr, '_expose_path', None)
             if not endpoint_path is None:
-                self._endpoints[prefix + endpoint_path] = func
+                # now that we know this is an endpoint, do a normal lookup to get the bound method
+                self._endpoints[prefix + endpoint_path] = getattr(cls, a)

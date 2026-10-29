@@ -146,7 +146,7 @@ class QPObjectSegmenter:
         if nts > NTMIN:
             # now make a cumulative histogram from these
             cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
-            cumuy = (1.0+np.arange(nts))/np.float(nts)
+            cumuy = (1.0+np.arange(nts))/float(nts)
             bbx = (x.min(),x.max())
             bby = (y.min(),y.max())
             voxx, voxy, _ = mdh.voxelsize_nm

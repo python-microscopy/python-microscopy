@@ -44,9 +44,9 @@ class FocusLockPanel(wx.Panel):
         if self.offset_piezo is not None:
             offset, offset_range = self._get_offset_and_range()
 
-            self._offset_slider = wx.Slider(self, -1, 100 * (offset - offset_range[0]), 
-                                           0, 
-                                           100 * (offset_range[1] - offset_range[0]), 
+            self._offset_slider = wx.Slider(self, -1, int(100 * (offset - offset_range[0])),
+                                           0,
+                                           int(100 * (offset_range[1] - offset_range[0])),
                                            size=wx.Size(100, -1),
                                            style=wx.SL_HORIZONTAL)
             self._offset_label = wx.StaticBox(self, -1, u'%s: %2.3f %s' % ('offset', offset, u'\u03BCm'))
@@ -88,7 +88,7 @@ class FocusLockPanel(wx.Panel):
 
             self._offset_slider.SetValue(int(100 * (offset - offset_range[0])))
             self._offset_slider.SetMin(0)
-            self._offset_slider.SetMax(100 * (offset_range[1] - offset_range[0]))
+            self._offset_slider.SetMax(int(100 * (offset_range[1] - offset_range[0])))
             self._offset_label.SetLabel(u'%s: %2.3f %s' % ('offset', offset, u'\u03BCm'))
 
 

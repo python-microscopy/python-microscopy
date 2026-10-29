@@ -68,7 +68,7 @@ class GaussFitter1D(object):
         max_ind = np.argmax(data)
         fwhm = np.sum(data > offset + 0.5 * amplitude)
         # amplitude, center, sigma, bx, b = parameters
-        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - data[0]), offset
+        return amplitude, position[max_ind], fwhm / 2.355, (data[-1] - data[0]) / (position[-1] - position[0]), offset
 
     def fit(self, position, data):
         guess = self._calc_guess(position, data)
@@ -111,7 +111,7 @@ class ReflectedLinePIDFocusLock(PID):
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
                  max_sigma=np.finfo(float).max, min_lateral_sigma=0,
-                 trigger_failsafe=True, multiplier=1):
+                 trigger_failsafe=True, multiplier=1, sum_axis=0):
         """
 
         Parameters
@@ -142,6 +142,12 @@ class ReflectedLinePIDFocusLock(PID):
         trigger_failsafe : bool
             if True, try to kill lasers if the profile intensity saturates a
             majority of the pixels on the focus lock camera
+        sum_axis : int
+            frame axis to sum along (i.e. the axis parallel to the reflected
+            stripe) to generate the 1D profile. The default, 0, suits the
+            usual camera orientation where focus changes show up as vertical
+            movement in PYMEAcquire. Use 1 if the focus lock camera is
+            rotated by 90 degrees.
         
         """
         self.scope = scope
@@ -155,8 +161,12 @@ class ReflectedLinePIDFocusLock(PID):
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
         self._min_lateral_sigma = min_lateral_sigma
+        if sum_axis not in (0, 1):
+            raise ValueError('sum_axis must be 0 or 1')
+        self._sum_axis = sum_axis
         
-        self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
+        # default to half of the camera size along the profile axis
+        self.peak_position = self.scope.frameWrangler.currentFrame.squeeze().shape[1 - sum_axis] * 0.5
         self.subtraction_profile = None
 
         self.use_failsafe = trigger_failsafe and hasattr(scope, 'failsafe')
@@ -182,7 +192,7 @@ class ReflectedLinePIDFocusLock(PID):
             t = time.time()
             self.on_frame()
             # throttle this to whatever we set cycle time to
-            time.sleep(max(self.sample_time - time.time() - t, 0))
+            time.sleep(max(self.sample_time - (time.time() - t), 0))
 
 
     def StartPolling(self):
@@ -253,7 +263,7 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
-        self.set_auto_mode(~self.auto_mode)
+        self.EnableLock(not self.auto_mode)
 
     @webframework.register_endpoint('/ChangeSetpoint', output_is_json=False)
     def ChangeSetpoint(self, setpoint=None):
@@ -274,8 +284,19 @@ class ReflectedLinePIDFocusLock(PID):
         -------
 
         """
-        self.subtraction_profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
+        self.subtraction_profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=self._sum_axis).astype(float)
 
+
+    @property
+    def sum_axis(self):
+        """int : frame axis summed over to generate the 1D profile which is fit.
+
+        Read-only - `peak_position`, the setpoint, and any subtraction profile
+        are all expressed along the other axis, so this cannot be changed once
+        the lock has been set up. Exposed so that UI code displaying the profile
+        can sum along the same axis as the lock itself.
+        """
+        return self._sum_axis
 
     @property
     def fit_roi_size(self):
@@ -461,13 +482,13 @@ class ReflectedLinePIDFocusLock(PID):
     def on_frame(self, **kwargs):
         # get focus position
         cf = self.scope.frameWrangler.currentFrame.squeeze()
-        profile = cf.sum(axis=0).astype(float)
+        profile = cf.sum(axis=self._sum_axis).astype(float)
         
         if self.use_failsafe and profile.sum() > self._failsafe_threshold:
             self.scope.failsafe.kill(message='focus lock profile suggests heat danger')
         
         try:
-            assert np.std(cf.sum(axis=1)) > self._min_lateral_sigma
+            assert np.std(cf.sum(axis=1 - self._sum_axis)) > self._min_lateral_sigma
             
             if self.subtraction_profile is not None:
                 peak_position, success = self.find_peak(profile - self.subtraction_profile)

@@ -100,6 +100,7 @@ py_sources = files(
     'ui/tile_panel.py',
     'ui/intsliders.py',
     'ui/lasersliders.py',
+    'ui/function_generator_panel.py',
     'ui/multiview_select.py',
     'ui/actionUI.py',
     'ui/mpd_picosecond_delay_panel.py',
