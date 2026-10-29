@@ -380,7 +380,7 @@ class ModuleBase(HasStrictTraits):
         If a module has a single input, you can provide the input directly as the first and only argument. If the module
         supports multiple inputs, they must be specified using keyword arguments.
         
-        NOTE: Use the trait names as keys.
+        NOTE: Use the trait names as keys. Note the only valid keys are the names of traits of type Input. 
         
         If the module has only one output, using apply_simple() will automatically pull it out of the namespace and return it.
         

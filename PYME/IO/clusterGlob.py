@@ -102,7 +102,7 @@ def glob0(dirname, basename, serverfilter=clusterIO.local_serverfilter):
     return []
 
 
-magic_check = re.compile('[*?[]')
+magic_check = re.compile(r'[*?[]')
 
 def has_magic(s):
     return magic_check.search(s) is not None
