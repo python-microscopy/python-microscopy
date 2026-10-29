@@ -60,9 +60,9 @@ def construct_zernike_polynomials(x,y,zernike_indexes,mask=None):
     lut = construct_zernike_lookuptable(zernike_indexes)
     nzernikes = zernike_indexes.shape[0]
     r = np.sqrt(x**2+y**2)
-    phi = np.arctan2(x,y).astype(np.complex)
-    zf = np.zeros((x.shape[0], nzernikes), np.complex)
-    s = np.zeros(x.shape,np.complex)
+    phi = np.arctan2(x,y).astype(complex)
+    zf = np.zeros((x.shape[0], nzernikes), complex)
+    s = np.zeros(x.shape,complex)
     exp_terms = {}
     for idx,(n,m) in zip(range(nzernikes), zernike_indexes):
         s[:]=0
@@ -74,7 +74,7 @@ def construct_zernike_polynomials(x,y,zernike_indexes,mask=None):
         s[r>1]=0
         zf[:,idx] = s*exp_term 
     
-    result = np.zeros((mask.shape[0],mask.shape[1],nzernikes),np.complex)
+    result = np.zeros((mask.shape[0],mask.shape[1],nzernikes),complex)
     result[mask] = zf
     return result
 
