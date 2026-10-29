@@ -33,14 +33,13 @@ def save_as_series_of_png(view, filename=None):
     """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
     via ffmpeg or similar tools
 
-    FIXME: Currently only supports z
-
     Parameters
     ----------
     view :ArrayViewPanel
     filename: str
         filename of the Imagestack used to generate the View. Provided only as a default filestub for the PNG series
     """
+    series_stub = ''
     if filename is not None:
         import os
         series_stub = os.path.split(os.path.splitext(filename)[0])[-1]
