@@ -73,15 +73,15 @@ def verify_cluster_results_filename(resultsFilename):
 
     """
     from PYME.IO import clusterIO
-    import os
+    import posixpath
     if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
+        di, fn = posixpath.split(resultsFilename)
         i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+        stub = posixpath.splitext(fn)[0]
+        while clusterIO.exists(posixpath.join(di, stub + '_%d.h5r' % i)):
             i += 1
 
-        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
+        resultsFilename = posixpath.join(di, stub + '_%d.h5r' % i)
 
     return resultsFilename
 
