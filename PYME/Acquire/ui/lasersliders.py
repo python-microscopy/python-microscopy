@@ -77,9 +77,11 @@ class LaserSliders(wx.Panel):
                 min_power = 0
                 max_power = 100
             else:
-                min_power = self.scopeState['Lasers.%s.MinPower' % laserName]
-                max_power =  self.scopeState['Lasers.%s.MaxPower' % laserName]
-            sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName],minValue=min_power, maxValue=max_power, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+                # wx.Slider only accepts integers
+                min_power = int(round(self.scopeState['Lasers.%s.MinPower' % laserName]))
+                max_power = int(round(self.scopeState['Lasers.%s.MaxPower' % laserName]))
+            init_value = min(max(self._power_to_slider(laserName), min_power), max_power)
+            sl = wx.Slider(self, -1, init_value, minValue=min_power, maxValue=max_power, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
             if wx.version() < '4':
                 #FIXME for wx >= 4
@@ -155,7 +157,16 @@ class LaserSliders(wx.Panel):
 
         finally:
             self.sliding = False
-            
+
+    def _power_to_slider(self, laserName):
+        """Convert the current laser power to an (integer) slider position."""
+        power = self.scopeState['Lasers.%s.Power' % laserName]
+        if self.mode == 1:
+            maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
+            return int(round(10*log2(max(power*1024/maxPower, 1))))
+        else:
+            return int(round(power))
+
     def on_toggle(self, event):
         b = event.GetEventObject()
         laserName = self.laserNames[self.buttons.index(b)]
@@ -179,11 +190,10 @@ class LaserSliders(wx.Panel):
                 power = self.scopeState['Lasers.%s.Power' % laserName]
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
                 #Check which slider modes so that the slider will move accordingly
+                self.sliders[ind].SetValue(self._power_to_slider(laserName))
                 if self.mode == 1:
-                    self.sliders[ind].SetValue(round(10*log2(max(power*1024/maxPower, 1))))
                     self.labels[ind].SetLabel('%#.3g'%(100*power/maxPower))
                 else:
-                    self.sliders[ind].SetValue(power)
                     self.labels[ind].SetLabel('%#.3g'%power)
 
                 lon = self.scopeState['Lasers.%s.On' % laserName]
