@@ -435,7 +435,7 @@ class PsfExtractor(Plugin):
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
             im = ImageStack(data=psf, mdh=self.image.mdh, titleStub='Extracted PSF, Chan %i' % ii)
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as TIFFF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
             calibrater = psfTools.PSFTools(self.dsviewer, im)

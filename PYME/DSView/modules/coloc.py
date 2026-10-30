@@ -159,7 +159,7 @@ class Colocaliser(Plugin):
         if not getattr(self.image, 'labels', None) is None:
             have_mask = True
             
-            mask = (self.image.labels > 0.5).squeeze()
+            mask = (self.image.labels.data_xyztc[:,:,:,0, 0] > 0.5).squeeze()
         else:
             have_mask = False
             mask = None

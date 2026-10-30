@@ -344,7 +344,10 @@ class ModuleSelectionDialog(wx.Dialog):
                 #self.tree_list.HideItem(self.rootNodes[base], False)
         
         # force size recalculation by calling HideItem on the last item.
-        self.tree_list.HideItem(item, not show)
+        #self.tree_list.HideItem(item, not show)
+        main_win = self.tree_list.GetMainWindow()
+        main_win.CalculatePositions()
+
 
 class EditModuleWithHelpDialog(wx.Dialog):
     def __init__(self, parent, module):

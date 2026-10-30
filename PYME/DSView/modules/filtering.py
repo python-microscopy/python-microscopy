@@ -218,8 +218,6 @@ class Filterer(Plugin):
                         
                 labs, nlabs = ndimage.label(m2)
                 
-            #store a copy in the image for measurements etc ...
-            self.image.labels = labs
             
             im = ImageStack(labs, titleStub = 'Labelled Image')
             im.mdh.copyEntriesFrom(self.image.mdh)
@@ -228,6 +226,9 @@ class Filterer(Plugin):
             im.mdh['Labelling.MinSize'] = rSize
             im.mdh['Labelling.Thresholds'] = self.image.labelThresholds
             #im.mdh['Processing.CropROI'] = roi
+
+            #store a copy in the image for measurements etc ...
+            self.image.labels = im
     
             if self.dsviewer.mode == 'visGUI':
                 mode = 'visGUI'
@@ -251,34 +252,38 @@ class Filterer(Plugin):
 
             im = image.openImages[names[dlg.GetSelection()]]
             
-            self.image.labels = im.data[:,:,:].astype('uint16')
+            self.image.labels = im
             
                 
     def OnLabelWatershed(self, event):
         import numpy as np
-        from PYME.contrib.cpmath import watershed
+        #from PYME.contrib.cpmath import watershed
         from PYME.IO.image import ImageStack
+
+        from PYME.recipes.processing import Watershed
         from PYME.DSView import ViewIm3D
         
         nChans = self.image.data.shape[3]
     
         filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze()) for chanNum in range(nChans)]
         
-        img = (-sum([im/im.max() for im in filt_ims])*(2**15)/nChans).astype('int16')
+        #img = (-sum([im/im.max() for im in filt_ims])*(2**15)/nChans).astype('int16')
         
         mask = (sum([filt_ims[chanNum] > self.do.thresholds[chanNum] for chanNum in range(nChans)]) > .5).astype('int16')
         
         #self.image.labelThresholds = [(self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum]) for chanNum in range(self.image.data.shape[3])]
 
         #print sum(filt_ims).shape
+
+        im = Watershed().apply_simple(inputImage=self.image,inputMask=ImageStack(mask),inputLabels=self.image.labels)
         
-        labs = watershed.fast_watershed(img, self.image.labels.astype('int16'), mask=mask)
+        #labs = watershed.fast_watershed(img, self.image.labels.astype('int16'), mask=mask)
             
         #store a copy in the image for measurements etc ...
-        self.image.labels = labs
+        self.image.labels = im
         
-        im = ImageStack(labs, titleStub = 'Labelled Image')
-        im.mdh.copyEntriesFrom(self.image.mdh)
+        #im = ImageStack(labs, titleStub = 'Labelled Image')
+        #im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         
         im.mdh['Labelling.WatershedThresholds'] = self.do.thresholds

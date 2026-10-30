@@ -29,7 +29,7 @@ __author__ = 'J�rgen Hermann, Mike Brown, Christopher Arndt, David Baddeley'
 
 
 # Imports
-import cgi, string, sys
+import string, sys
 from io import StringIO
 import keyword, token, tokenize
 

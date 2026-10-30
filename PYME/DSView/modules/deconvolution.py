@@ -202,7 +202,7 @@ class Deconvolver(Plugin):
                 mode = 'lite'
                 if beadMode and im.data.shape[1] < 100:
                     mode = 'psf'
-                    im.defaultExt = '*.psf' #we want to save as PSF by default
+                    im.defaultExt = '*.tif' #we want to save as TIFF by default
                 self.res = ViewIm3D(im, mode=mode, parent=wx.GetTopLevelParent(self.dsviewer))                    
                     
                 #self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=wx.GetTopLevelParent(self.dsviewer), mode=mode)
@@ -443,12 +443,14 @@ class WienerDeconvolver(wx.Panel):
     def OnPSFFileChanged(self, event=None):
         from scipy import ndimage
         
-        
-        vx = self.sourceImage.mdh.getEntry('voxelsize.x')
-        vy = self.sourceImage.mdh.getEntry('voxelsize.y')
-        vz = self.sourceImage.mdh.getEntry('voxelsize.z')
+        vx, vy, vz = self.sourceImage.voxelsize_nm
 
-        psf, vs = numpy.load(self.fpPSF.GetPath())
+        psf_im = ImageStack(filename=self.fpPSF.GetPath())
+        psf = psf_im.data_xyztc[:,:,:,0,0].squeeze()
+        print((psf.shape, self.sourceImage.data.shape))
+        vs = psf_im.voxelsize_nm
+
+        #psf, vs = numpy.load(self.fpPSF.GetPath())
 
         self.destImage.mdh['Deconvolution.PSFFile'] = self.fpPSF.GetPath()
 
@@ -464,7 +466,7 @@ class WienerDeconvolver(wx.Panel):
             
         print((psf.shape, self.sourceImage.data.shape))
             
-        self.dw.psf_calc(psf, self.sourceImage.data.shape)
+        self.dw.psf_calc(psf, self.sourceImage.data_xyztc.shape[:3])
         
         self.bCalculate.Enable(os.path.exists(self.fpPSF.GetPath()))
         self.havePSF = True

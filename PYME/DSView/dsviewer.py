@@ -77,7 +77,7 @@ class dt(wx.FileDropTarget):
                    
 
 class DSViewFrame(AUIFrame):
-    def __init__(self, image,  parent=None, title='', mode='LM', 
+    def __init__(self, image: ImageStack,  parent=None, title='', mode='LM', 
                  size = None, glCanvas=None):
         self._component_name='PYMEImage'
         
