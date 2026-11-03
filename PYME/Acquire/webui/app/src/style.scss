@@ -1,0 +1,164 @@
+@import './styles/variables';
+@import './styles/mixins';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: $spacing-lg;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-sm;
+    font-size: $font-sm;
+    color: $text-secondary;
+  }
+}
+
+.form-control {
+  @include form-input;
+  width: 100%;
+  font-size: $font-sm;
+}
+
+.select-sm {
+  @include form-input;
+  padding: $input-padding-sm;
+  font-size: $font-sm;
+  width: 100%;
+}
+
+.input-sm {
+  @include form-input;
+  padding: $input-padding-sm;
+  font-size: $font-sm;
+}
+
+/* Button Styles */
+.btn {
+  @include button-base;
+  font-weight: 500;
+
+  &-sm {
+    @include button-variant($secondary-color, $secondary-hover);
+    @include button-small;
+    border: 1px solid $border-color-light;
+
+    &:active {
+      background-color: $darkest-bg;
+    }
+  }
+
+  &-primary {
+    @include button-variant($primary-color, $primary-hover);
+  }
+
+  &-secondary {
+    @include button-variant($secondary-color, $secondary-hover);
+    padding: $spacing-sm $spacing-md;
+  }
+
+  &-danger {
+    @include button-variant($danger-color, $danger-hover);
+  }
+}
+
+/* Section Styles */
+.section {
+  margin-bottom: $spacing-xl;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1px solid $border-color;
+}
+
+.section-heading,
+.subsection-heading {
+  margin-bottom: $spacing-md;
+  font-size: $font-sm;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+.subsection-heading {
+  margin-bottom: $spacing-sm;
+}
+
+/* Control Group */
+.control-group {
+  margin-bottom: $spacing-md;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    font-size: $font-sm;
+    color: $text-secondary;
+  }
+}
+
+/* Radio and Checkbox Styles */
+.radio-group {
+  margin-bottom: $spacing-lg;
+}
+
+.radio-label,
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-sm;
+  color: $text-secondary;
+  cursor: pointer;
+
+  input[type="radio"],
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.radio-label {
+  margin-bottom: $spacing-sm;
+}
+
+/* Form Rows and Columns */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.form-col {
+  label {
+    display: block;
+    margin-bottom: $spacing-sm;
+    font-size: $font-sm;
+    color: $text-secondary;
+  }
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
