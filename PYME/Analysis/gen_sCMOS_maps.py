@@ -141,31 +141,72 @@ def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
         full_dark = mdh['Camera.ADOffset'] * np.ones(sensor_size)
         full_var = (mdh['Camera.ReadNoise'] ** 2) * np.ones(sensor_size)
         
-        mdh['CamerMap.Uniform'] = True
+        mdh['CameraMap.Uniform'] = True
 
     return full_dark, full_var, mdh
+
+def get_install_map_type(mdh):
+    """
+    Check that map metadata is suitable for installation to the default
+    location and determine the map type.
+
+    Uses the ``CameraMap.*`` keys written by `generate_maps`, falling back to
+    the legacy ``Analysis.*`` keys written by the old mean-variance tool.
+
+    Parameters
+    ----------
+    mdh : MetaDataHandler
+        metadata of the map to install
+
+    Returns
+    -------
+    maptype : str
+        'dark' or 'variance'
+
+    Raises
+    ------
+    ValueError
+        if the metadata does not describe a map, or describes a partial
+        (ROI based) or uniform map.
+    """
+    cmap_type = mdh.getOrDefault('CameraMap.Type', None)
+
+    if cmap_type is not None:
+        if cmap_type not in ('mean', 'variance'):
+            raise ValueError('Unrecognised CameraMap.Type "%s" - probably not a map' % cmap_type)
+
+        if mdh.getOrDefault('CameraMap.SubROI', False):
+            raise ValueError('Partial (ROI based) maps cannot be installed to the default location')
+
+        if mdh.getOrDefault('CameraMap.Uniform', False):
+            raise ValueError('Uniform maps cannot be installed to the default location')
+
+        return 'dark' if cmap_type == 'mean' else 'variance'
+
+    # legacy maps
+    if mdh.getOrDefault('Analysis.name', '') != 'mean-variance':
+        raise ValueError('Neither CameraMap.Type nor Analysis.name ("mean-variance") '
+                         'found in metadata - probably not a map')
+
+    if not (mdh['Analysis.valid.ROIHeight'] == mdh['Camera.ROIHeight']
+            and mdh['Analysis.valid.ROIWidth'] == mdh['Camera.ROIWidth']):
+        raise ValueError('Partial (ROI based) maps cannot be installed to the default location')
+
+    if mdh.getOrDefault('Analysis.isuniform', False):
+        raise ValueError('Uniform maps cannot be installed to the default location')
+
+    return 'dark' if mdh['Analysis.resultname'] == 'mean' else 'variance'
+
 
 def install_map(filename):
     """Installs a map file to its default location"""
 
     source = ImageStack(filename=filename)
-    if source.mdh.getOrDefault('Analysis.name', '') != 'mean-variance':
-        logger.error('Analysis.name is not equal to "mean-variance" - probably not a map')
+    try:
+        maptype = get_install_map_type(source.mdh)
+    except ValueError as e:
+        logger.error(str(e))
         sys.exit('aborting...')
-
-    if not (source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']
-            and source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']):
-        logger.error('Partial (ROI based) maps cannot be installed to the default location')
-        sys.exit(-1)
-
-    if source.mdh.getOrDefault('Analysis.isuniform', False):
-        logger.error('Uniform maps cannot be installed to the default location')
-        sys.exit(-1)
-
-    if source.mdh['Analysis.resultname'] == 'mean':
-        maptype = 'dark'
-    else:
-        maptype = 'variance'
 
     mapname = mkDefaultPath(maptype, source.mdh)
 
@@ -329,7 +370,7 @@ def main():
     if args.dir is None:
         logger.info('installing in standard location...')
         
-        if im_dark.mdh.get('CameraMap.SubROI', False) or im_variance.mdh.get('CameraMap.subROI', False):
+        if im_dark.mdh.get('CameraMap.SubROI', False) or im_variance.mdh.get('CameraMap.SubROI', False):
             logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
             sys.exit(-1)
             
