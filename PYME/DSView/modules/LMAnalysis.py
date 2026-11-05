@@ -303,33 +303,16 @@ class AnalysisSettingsView(object):
 
         
 class AnalysisController(object):
-    def __init__(self, imageMdh=None, tq = None):
+    def __init__(self, imageMdh=None):
         self.analysisMDH = MetaDataHandler.CopyOnWriteMDHandler(imageMdh) #MetaDataHandler.NestedClassMDHandler(imageMdh)
         self.analysisMDH.record_pyme_version() # update version to version we are running for the analysis - TODO - record worker versions as well
         self.onImagesPushed = dispatch.Signal()
         self.onMetaDataChange = dispatch.Signal()
 
-        self.tq = tq
-        
-        if self.tq is None:
-            #try and find a task queue
-            try:
-                self._checkTQ()
-            except:
-                pass
 
 
     def pushImages(self, image):
-        self._checkTQ()
-        if debug:
-            print('TQ checked')
-
-        if image.dataSource.moduleName == 'HDFDataSource':
-            return self.pushImagesHDF(image)
-        elif image.dataSource.moduleName == 'TQDataSource':
-            return self.pushImagesQueue(image)
-        else: #generic catchall for other data sources
-            return self.pushImagesDS(image)
+        self.pushImagesCluster(image)
 
     def pushImagesCluster(self, image):
         from PYME.cluster import rules #HTTPRulePusher
@@ -358,89 +341,9 @@ class AnalysisController(object):
         self.onImagesPushed.send(self)
             
 
-    def pushImagesHDF(self, image):
-        dataFilename = image.seriesName
-        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        self.queueName = resultsFilename
 
-        self.tq.createQueue('HDFTaskQueue', self.queueName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
+    
 
-        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.queueName, self.analysisMDH)
-        mdhQ['DataFileID'] = fileID.genDataSourceID(image.dataSource)
-
-#        evts = self.image.dataSource.getEvents()
-#        if len(evts) > 0:
-#            self.tq.addQueueEvents(self.image.seriesName, evts)
-
-        self.resultsMdh = mdhQ
-
-        self.tq.releaseTasks(self.queueName, self.analysisMDH['Analysis.StartAt'])
-
-        self.onImagesPushed.send(self)
-
-
-    def pushImagesQueue(self, image):
-        image.mdh.copyEntriesFrom(self.analysisMDH)
-        self.queueName = image.seriesName
-        self.resultsMdh = image.mdh
-        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
-        self.tq.releaseTasks(self.queueName , self.analysisMDH['Analysis.StartAt'])
-
-        self.onImagesPushed.send(self)
-
-    def pushImagesDS(self, image):
-        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        self.queueName = resultsFilename
-            
-        debugPrint('Results file = %s' % resultsFilename) 
-        
-        self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
-        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
-        
-        mn = image.dataSource.moduleName
-        #dsID = self.image.seriesName
-        #if it's a buffered source, go back to underlying source
-        if mn == 'BufferedDataSource':
-            mn = image.dataSource.dataSource.moduleName
-
-        self.tq.createQueue('DSTaskQueue', self.queueName, self.resultsMdh, 
-                            mn, image.seriesName, 
-                            resultsFilename, startAt = self.analysisMDH['Analysis.StartAt'])
-        
-        evts = image.dataSource.getEvents()
-        if len(evts) > 0:
-            self.tq.addQueueEvents(self.queueName, evts)
-        
-        debugPrint('Queue created')
-
-        self.onImagesPushed.send(self)
-
-    def _checkTQ(self):
-        def _genURI(taskQueueName):
-            try:
-                from PYME.misc import hybrid_ns
-                ns = hybrid_ns.getNS()
-                return ns.resolve(taskQueueName)
-            except:
-                return 'PYRONAME://' + taskQueueName
-
-        try:
-            self.tq.isAlive() 
-        except:
-            self.tq = None
-        
-        if self.tq is None:
-            import Pyro.core
-            from PYME.misc.computerName import GetComputerName
-            compName = GetComputerName()
-            
-            try:
-                taskQueueName = 'TaskQueues.%s' % compName   
-                self.tq = Pyro.core.getProxyForURI(_genURI(taskQueueName))
-            except:
-                logger.exception('Error finding task queue, looking for a local queue instead')
-                taskQueueName = 'PrivateTaskQueues.%s' % compName
-                self.tq = Pyro.core.getProxyForURI('PYRONAME://' + _genURI(taskQueueName))
 
 
 #############        
@@ -658,19 +561,14 @@ class LMAnalyser2(Plugin):
         
         self.SetFitInfo()
         
-    @property
-    def use_cluster(self):
-        logger.debug('use_cluster: newStyle=%s, tq=%s' % (self.newStyleTaskDistribution, self.analysisController.tq))
-        return self.newStyleTaskDistribution and (self.image.filename.upper().startswith('PYME-CLUSTER') or (self.analysisController.tq is None))
-
+    
     def OnGo(self, event=None):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.use_cluster:
-            self.analysisController.pushImagesCluster(self.image)
-        else:
-            self.analysisController.pushImages(self.image)
+        
+        self.analysisController.pushImagesCluster(self.image)
+        
 
     def OnImagesPushed(self, **kwargs):
         if debug:
@@ -713,16 +611,10 @@ class LMAnalyser2(Plugin):
         item.AddNewElement(pan)
         _pnl.AddPane(item)
 
-    @property
-    def tq(self):
-        #for backwards compatibility
-        return self.analysisController.tq
+    
 
     def refresh_analysis(self):
-        if self.use_cluster:
-            self._refresh_analysis_cluster()
-        else:
-            self._refresh_analysis_queue()
+        self._refresh_analysis_cluster() 
 
         self.progPan.draw()
         self.progPan.Refresh()
@@ -760,15 +652,6 @@ class LMAnalyser2(Plugin):
             except:
                 pass
     
-    def _refresh_analysis_queue(self):
-        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
-        if newNumAnalysed > self.numAnalysed:
-            self.numAnalysed = newNumAnalysed
-            self._add_new_results(self.tq.getQueueData(self.queueName, 'FitResults', len(self.fitResults)))
-
-        if (self.tq.getNumberOpenTasks(self.queueName) + self.tq.getNumberTasksInProgress(self.queueName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
-            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
-            self.dsviewer.statusbar.Refresh()
 
     def _refresh_analysis_cluster(self):
         import requests
@@ -964,7 +847,7 @@ class LMAnalyser2(Plugin):
                 mdh['Analysis.StartAt'] = zp
             
         ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
-        res = ft(gui=gui,taskQueue=self.tq)
+        res = ft(gui=gui)
 
         #print(res.driftResults)
         
@@ -974,9 +857,9 @@ class LMAnalyser2(Plugin):
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
                 plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', clim=(np.median(d.ravel()), d.max()))
-                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9, label='Candidates')
                 if ft.driftEst:
-                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19, label='Fiducials')
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
@@ -986,15 +869,27 @@ class LMAnalyser2(Plugin):
                 plt.yticks([])
                 
                 
+                
                     
                 vx, vy, _ = self.image.voxelsize_nm
                 
-                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2, label='Fit')
                 
                 if 'startParams' in res.results.dtype.names:
-                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2, label='Starting positions')
+
+                if ft.driftEst:
+                    try:
+                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2, label='Fiducial Fit')
+                    except AttributeError:
+                        pass
+
+                plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+                plt.title('Filtered Data with Candidates and Fit Results')
                 
                 if 'tIm' in dir(ft.ofd):
+                    # extra figgure to show thresholding image with fit results overlaid. Useful for debugging thresholding issues
+                    # and multi-emitter / dense emitter fitting issues.
                     plt.figure()
                     plt.imshow(ft.ofd.tIm.T, cmap=plt.cm.hot, interpolation='nearest')
                     #axis('tight')
@@ -1002,13 +897,11 @@ class LMAnalyser2(Plugin):
                     plt.ylim(d.shape[0], 0)
                     plt.xticks([])
                     plt.yticks([])
-                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', label='Fit')
 
-                if ft.driftEst:
-                    try:
-                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
-                    except AttributeError:
-                        pass
+                    plt.title('Thresholded Image with Fit Results (for debugging threshold choices)')
+
+                
                     
                 #figure()
                 #imshow()

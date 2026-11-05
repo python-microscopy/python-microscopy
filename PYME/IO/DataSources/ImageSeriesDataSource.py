@@ -41,7 +41,7 @@ except ImportError:
 
 class DataSource(XYTCDataSource):
     moduleName = 'ImageSeriesDataSource'
-    def __init__(self, filename='', metadata=None, taskQueue=None):
+    def __init__(self, filename='', metadata=None):
         if filename is not '':
             self.filename = getFullExistingFilename(filename)#convert relative path to full path
             #use metadata for glob

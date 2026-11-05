@@ -112,7 +112,7 @@ class BioformatsFile(bioformats.ImageReader):
 
 class DataSource(XYTCDataSource):
     moduleName = 'BioformatsDataSource'
-    def __init__(self, image_file, taskQueue=None, chanNum = 0, series=None):
+    def __init__(self, image_file, chanNum = 0, series=None):
         self.chanNum = chanNum
 
         if isinstance(image_file, BioformatsFile):

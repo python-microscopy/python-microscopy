@@ -44,7 +44,6 @@ from ._base import Plugin
 class Deconvolver(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
-        self.tq = None
         
         dsviewer.AddMenuItem("Processing", "Deconvolution", self.OnDeconvICTM)
         dsviewer.AddMenuItem("Processing", "Deconvole bead shape", self.OnDeconvBead)
@@ -53,30 +52,7 @@ class Deconvolver(Plugin):
 
         dsviewer.updateHooks.append(self.update)
         
-    def checkTQ(self):
-        import Pyro.core
-        if self.tq is None:
-            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
-            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            #else:
-            #    taskQueueName = 'taskQueue'
-
-            from PYME.misc.computerName import GetComputerName
-            compName = GetComputerName()
-
-            taskQueueName = 'TaskQueues.%s' % compName
-
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
-
-
-#    def checkTQ(self):
-#        import Pyro.core
-#        if self.tq == None:
-#            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-#                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-#            else:
-#                taskQueueName = 'taskQueue'
-#            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+    
 
     def OnDeconvBead(self, event):
         self.OnDeconvICTM(None, True)
@@ -149,7 +125,7 @@ class Deconvolver(Plugin):
                 weights = 1
 
 
-            if dlg.GetBlocking():
+            if False: #dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
                 from PYME.Deconv import tq_block_dec
@@ -269,7 +245,7 @@ class Deconvolver(Plugin):
             dp = numpy.array(data)
             weights = 1
 
-            if dlg.GetBlocking():
+            if False: #dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
                 from PYME.Deconv import tq_block_dec

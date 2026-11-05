@@ -468,52 +468,7 @@ class ImageStack(object):
         
         return MetaDataHandler.origin_nm(self.mdh, self.pixelSize)
 
-            
-
-
-    def _loadQueue(self, filename):
-        """Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
-        Pyro.
         
-        Parameters
-        ----------
-
-        filename  : string
-            the name of the queue         
-        
-        """
-        import Pyro.core
-        from PYME.IO.DataSources import TQDataSource
-        from PYME.misc.computerName import GetComputerName
-        compName = GetComputerName()
-
-        if self.queueURI is None:
-            #do a lookup
-            taskQueueName = 'TaskQueues.%s' % compName
-            
-            try:
-                from PYME.misc import hybrid_ns
-                ns = hybrid_ns.getNS()
-                URI = ns.resolve(taskQueueName)
-            except:
-                URI = 'PYRONAME://' + taskQueueName
-            
-            self.tq = Pyro.core.getProxyForURI(URI)
-        else:
-            self.tq = Pyro.core.getProxyForURI(self.queueURI)
-
-        self.seriesName = filename[len('QUEUE://'):]
-
-        self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
-        self.SetData(self.dataSource) #this will get replaced with a wrapped version
-
-        self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-        MetaData.fillInBlanks(self.mdh, self.dataSource)
-
-        #self.timer.WantNotification.append(self.dsRefresh)
-
-        self.events = self.dataSource.getEvents()
-        self.mode = 'LM'
 
     def _loadh5(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -586,7 +541,6 @@ class ImageStack(object):
         MetaData.fillInBlanks(self.mdh, self.dataSource)
 
         #calculate the name to use when we do batch analysis on this        
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = filename
 
         self.events = self.dataSource.getEvents()
@@ -612,7 +566,6 @@ class ImageStack(object):
         MetaData.fillInBlanks(self.mdh, self.dataSource)
 
         #calculate the name to use when we do batch analysis on this        
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = filename
 
         self.events = self.dataSource.getEvents()
@@ -636,8 +589,6 @@ class ImageStack(object):
         self.mdh.setEntry('voxelsize.y', vox.y)
         self.mdh.setEntry('voxelsize.z', vox.z)
 
-
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'psf'
@@ -757,7 +708,6 @@ class ImageStack(object):
         
         self.SetData(data)
 
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -776,7 +726,6 @@ class ImageStack(object):
 
         self.SetData(data)
         
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
     
         self.mode = 'default'
@@ -790,7 +739,6 @@ class ImageStack(object):
         data = numpy.memmap(filename, dtype=self.mdh['DataType'], mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
         self.SetData(data)
 
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -1098,7 +1046,6 @@ class ImageStack(object):
 
         self.SetData(data)
         
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -1261,7 +1208,6 @@ class ImageStack(object):
         
         print(self.data.shape)
 
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -1294,7 +1240,6 @@ class ImageStack(object):
 
         self._findAndParseMetadata(filename)
 
-        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'

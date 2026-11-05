@@ -49,7 +49,7 @@ class decTask(taskDef.Task):
         self.lamb = lamb
         self.num_iters = num_iters
 
-    def __call__(self, gui=False, taskQueue=None):
+    def __call__(self, gui=False):
         global queueID, decObj
 
         if (not queueID == self.queueName) or (not decObj.shape == self.block.shape):

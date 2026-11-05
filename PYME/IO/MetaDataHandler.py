@@ -585,29 +585,29 @@ class HDFMDHandler(MDHandlerBase):
 
         return entryNames
 
-class QueueMDHandler(MDHandlerBase):
-    def __init__(self, tq, queueName, mdToCopy=None):
-        self.tq = tq
-        self.queueName = queueName
-        self.md = None
+# class QueueMDHandler(MDHandlerBase):
+#     def __init__(self, tq, queueName, mdToCopy=None):
+#         self.tq = tq
+#         self.queueName = queueName
+#         self.md = None
 
-        if not mdToCopy is None:
-            self.copyEntriesFrom(mdToCopy)
+#         if not mdToCopy is None:
+#             self.copyEntriesFrom(mdToCopy)
             
-    def copyEntriesFrom(self, mdToCopy):
-        self.tq.setQueueMetaDataEntries(self.queueName, mdToCopy)
+#     def copyEntriesFrom(self, mdToCopy):
+#         self.tq.setQueueMetaDataEntries(self.queueName, mdToCopy)
 
-    def setEntry(self,entryName, value):
-        self.tq.setQueueMetaData(self.queueName, entryName, value)
-
-
-    def getEntry(self,entryName):
-        #print entryName
-        return self.tq.getQueueMetaData(self.queueName, entryName)
+#     def setEntry(self,entryName, value):
+#         self.tq.setQueueMetaData(self.queueName, entryName, value)
 
 
-    def getEntryNames(self):
-        return self.tq.getQueueMetaDataKeys(self.queueName)
+#     def getEntry(self,entryName):
+#         #print entryName
+#         return self.tq.getQueueMetaData(self.queueName, entryName)
+
+
+#     def getEntryNames(self):
+#         return self.tq.getQueueMetaDataKeys(self.queueName)
         
 
 

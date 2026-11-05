@@ -137,7 +137,6 @@ from ._base import Plugin
 class Visualiser(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
-        self.tq = None
         
         self.canvases = []
         

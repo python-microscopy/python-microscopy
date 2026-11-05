@@ -28,7 +28,7 @@ from PYME.IO import dcimg
 
 class DataSource(XYTCDataSource):
     moduleName = 'DcimgDataSource'
-    def __init__(self, filename, taskQueue=None):
+    def __init__(self, filename):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         
         self.DCIFile = dcimg.DCIMGFile(self.filename)

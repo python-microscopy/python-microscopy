@@ -10,8 +10,7 @@ Key components:
                                             massages and buffers the image data, and calls the appropriate fit factory.
                                             It contains most of the logic which is shared amongst different fit methods.
                                             This includes noise models, and handling of sCMOS camera maps.
-                                            As implied by the *Remote* in it's name, it is typically executed as a task
-                                            running under :py:mod:`PYME.ParallelTasks.taskWorkerZC`.
+                                            
   - :py:mod:`PYME.localization.ofind` : Single molecule identification / finding code. This works by performing matched
                                         filtering and SNR dependent thresholding.
 """

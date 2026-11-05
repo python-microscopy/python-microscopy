@@ -21,7 +21,6 @@
 #
 ##################
 
-#from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import tables
 from .BaseDataSource import XYZTCDataSource
 

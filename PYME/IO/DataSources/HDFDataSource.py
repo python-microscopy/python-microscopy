@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class DataSource(XYZTCDataSource):
     moduleName = 'HDFDataSource'
-    def __init__(self, h5Filename, taskQueue=None):
+    def __init__(self, h5Filename):
         self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path
         self.h5File = tables.open_file(self.h5Filename)
         

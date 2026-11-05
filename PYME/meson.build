@@ -21,21 +21,6 @@ subdir('Analysis')
 subdir('Acquire')
 subdir('DSView')
 
-# ParallelTasks (should now be replaced by PYMECluster)
-# py_sources = files(
-#     'ParallelTasks/fitMon.py',
-#     'ParallelTasks/taskQueue.py',
-#     'ParallelTasks/taskWorkerZC.py',
-#     'ParallelTasks/setup_exe.py',
-#     'ParallelTasks/__init__.py',
-#     'ParallelTasks/launchWorkers.py',
-#     'ParallelTasks/taskServerZC.py',
-#     'ParallelTasks/fitMonP.py',
-#     'ParallelTasks/HDFTaskQueue.py',
-#     'ParallelTasks/DSTaskQueue.py',
-# )
-
-# py.install_sources(py_sources, subdir:'PYME/ParallelTasks')
 
 subdir('IO')
 

@@ -23,7 +23,6 @@
 from .edgeDB import *
 import numpy
 import threading
-#from PYME.ParallelTasks.launchWorkers import cpuCount
 import multiprocessing
 
 dtype = [('numIncidentEdges',  'i4'),('endVertices',  '7i4'),('edgeLengths',  '7f4'), ('meanNeighbourDist', 'f4'), ('nextRecordIndex',  'i4')]

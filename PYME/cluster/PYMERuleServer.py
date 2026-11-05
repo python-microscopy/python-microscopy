@@ -72,8 +72,7 @@ def main():
     
     proc = ruleserver.ServerThread(serverPort, bind_addr=bind_addr, profile=False)
     proc.start()
-    #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
-
+    
     if args.advertisements == 'zeroconf':
         ns = pyme_zeroconf.getNS('_pyme-taskdist')
     else:

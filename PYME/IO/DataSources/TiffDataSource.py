@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 class DataSource(XYZTCDataSource):
     moduleName = 'TiffDataSource'
-    def __init__(self, filename, taskQueue=None, chanNum = 0, series=0):
+    def __init__(self, filename, chanNum = 0, series=0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
         self.RGB = False

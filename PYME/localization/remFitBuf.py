@@ -90,7 +90,7 @@ class BufferManager(object):
 
         #read the data
         if not self.dataSourceID == md['dataSourceID']: #avoid unnecessary opening and closing 
-            self.dBuffer = buffers.SliceBuffer(DataSource(md['dataSourceID'], md['taskQueue']), bufferLen)
+            self.dBuffer = buffers.SliceBuffer(DataSource(md['dataSourceID']), bufferLen)
             self.bBuffer = None
         
         #fix our background buffers
@@ -166,13 +166,13 @@ class CameraInfoManager(object):
     def _fetchMap(self, md, mapName):
         """retrive a map, with a given name. First try and get it from the Queue,
         then try finding it locally"""
-        try:
-            map = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
-        except:
-            from PYME.IO import unifiedIO
-            # resolve pyme-cluster:// URIs to a local (or temporary) file, as the tiff loader needs a real filename
-            with unifiedIO.local_or_temp_filename(mapName) as fn:
-                map = np.array(ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze()) #this should handle .tif, .h5, and a few others
+        # try:
+        #     map = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
+        # except:
+        from PYME.IO import unifiedIO
+        # resolve pyme-cluster:// URIs to a local (or temporary) file, as the tiff loader needs a real filename
+        with unifiedIO.local_or_temp_filename(mapName) as fn:
+            map = np.array(ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze()) #this should handle .tif, .h5, and a few others
 
         return map
 
@@ -395,7 +395,7 @@ class fitTask(taskDef.Task):
         return numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
 
-    def __call__(self, gui=False, taskQueue=None):
+    def __call__(self, gui=False): #):
         global dBuffer, bBuffer, dataSourceID
         
         # short-circuit if a task is generated for a frame pre-StartAt
@@ -407,7 +407,7 @@ class fitTask(taskDef.Task):
         #create a local copy of the metadata        
         md = copy.copy(self.md)
         md['tIndex'] = self.index
-        md['taskQueue'] = taskQueue
+        #md['taskQueue'] = taskQueue
         md['dataSourceID'] = self.dataSourceID
         
         self.roi_offset = [0,0]

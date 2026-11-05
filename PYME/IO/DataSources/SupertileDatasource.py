@@ -143,6 +143,6 @@ class SupertileDataSource(XYTCDataSource):
     def reloadData(self):
         pass
     
-def DataSource(filename, taskQueue=None):
+def DataSource(filename):
     # cannonical DataSource constructor from filename (needed in order to be able to use this datasource as a task input)
     return SupertileDataSource.from_filename(filename)

@@ -86,6 +86,6 @@ class TileDataSource(XYZTCDataSource):
     def reloadData(self):
         pass
     
-def DataSource(filename, taskQueue=None):
+def DataSource(filename):
     # cannonical DataSource constructor from filename (needed in order to be able to use this datasource as a task input)
     return TileDataSource.from_filename(filename)

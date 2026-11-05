@@ -102,7 +102,6 @@ def launch_localize(analysisMDH, seriesName):
     """
     #import logging
     import json
-    #from PYME.ParallelTasks import HTTPTaskPusher
     from PYME.IO import MetaDataHandler
     from PYME.Analysis import MetaData
     from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
