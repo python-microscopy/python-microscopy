@@ -857,9 +857,9 @@ class LMAnalyser2(Plugin):
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
                 plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', clim=(np.median(d.ravel()), d.max()))
-                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9, label='Candidates')
                 if ft.driftEst:
-                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19, label='Fiducials')
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
@@ -869,15 +869,27 @@ class LMAnalyser2(Plugin):
                 plt.yticks([])
                 
                 
+                
                     
                 vx, vy, _ = self.image.voxelsize_nm
                 
-                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2, label='Fit')
                 
                 if 'startParams' in res.results.dtype.names:
-                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2, label='Starting positions')
+
+                if ft.driftEst:
+                    try:
+                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2, label='Fiducial Fit')
+                    except AttributeError:
+                        pass
+
+                plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+                plt.title('Filtered Data with Candidates and Fit Results')
                 
                 if 'tIm' in dir(ft.ofd):
+                    # extra figgure to show thresholding image with fit results overlaid. Useful for debugging thresholding issues
+                    # and multi-emitter / dense emitter fitting issues.
                     plt.figure()
                     plt.imshow(ft.ofd.tIm.T, cmap=plt.cm.hot, interpolation='nearest')
                     #axis('tight')
@@ -885,13 +897,11 @@ class LMAnalyser2(Plugin):
                     plt.ylim(d.shape[0], 0)
                     plt.xticks([])
                     plt.yticks([])
-                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', label='Fit')
 
-                if ft.driftEst:
-                    try:
-                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
-                    except AttributeError:
-                        pass
+                    plt.title('Thresholded Image with Fit Results (for debugging threshold choices)')
+
+                
                     
                 #figure()
                 #imshow()
