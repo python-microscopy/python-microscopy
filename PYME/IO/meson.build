@@ -58,7 +58,6 @@ py_sources = files(
     'DataSources/ClusterPZFDataSource.py',
     'DataSources/CropDataSource.py',
     'DataSources/BGSDataSource.py',
-    'DataSources/TQDataSource.py',
     'DataSources/ConcatenatedDataSource.py',
     'DataSources/RandomDataSource.py',
     'DataSources/BufferedDataSource.py',
