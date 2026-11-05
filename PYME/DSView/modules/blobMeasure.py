@@ -887,7 +887,7 @@ class Measurements(wx.Panel, Plugin):
         
     def OnHideObject(self, event):
         do = self.dsviewer.do
-        ind = self.image.labels[do.xp, do.yp, do.zp]
+        ind = self.image.labels.data_xyztc[do.xp, do.yp, do.zp, 0, 0]
         
         if ind:
             self.objects[ind - 1].shown = False
@@ -913,11 +913,11 @@ class Measurements(wx.Panel, Plugin):
     
     def GetRegion(self, index, objects = None):
         if not objects:
-            objects = ndimage.find_objects(self.image.labels)
+            objects = ndimage.find_objects(self.image.labels.data_xyztc[:,:,:,0,0]    )
             
         o = objects[index]
         
-        mask = self.image.labels[o] == (index+1)
+        mask = self.image.labels.data_xyztc[:,:,:,0, 0][o] == (index+1)
         
         slx, sly, slz = o
         
@@ -928,9 +928,9 @@ class Measurements(wx.Panel, Plugin):
         return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         
     def RetrieveObjects(self, masterChan=0, orientChan=1, orient_dir=-1):
-        objs = ndimage.find_objects(self.image.labels)
+        objs = ndimage.find_objects(self.image.labels.data_xyztc[:,:,:,0,0])
         
-        self.objects = [BlobObject(self.GetRegion(i, objs), masterChan, orientChan, orient_dir) for i in range(self.image.labels.max())]
+        self.objects = [BlobObject(self.GetRegion(i, objs), masterChan, orientChan, orient_dir) for i in range(self.image.labels.data_xyztc[:,:,:,0, 0].max())]
         
     def DrawOverlays(self, view, dc):
         import wx

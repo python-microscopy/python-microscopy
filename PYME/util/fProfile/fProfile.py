@@ -130,7 +130,7 @@ class ThreadProfiler(object):
 
 class ThreadProfilerRegex(ThreadProfiler):
 
-    def profile_on(self, regex='.*PYME.*', outfile='profile.txt'):
+    def profile_on(self, regex=r'.*PYME.*', outfile='profile.txt'):
         self.regex = re.compile(regex)
         self.outfile = open(outfile, 'w')
 

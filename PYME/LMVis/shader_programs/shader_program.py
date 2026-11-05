@@ -121,7 +121,7 @@ class ShaderProgram(object):
 
 import re
 import os
-vers_re = re.compile('#version\s+(\d+)\s*')
+vers_re = re.compile(r'#version\s+(\d+)\s*')
 
 def read_shader(shader_name, path, max_glsl_version='120'):
     """

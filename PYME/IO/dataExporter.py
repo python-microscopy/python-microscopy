@@ -363,27 +363,29 @@ class NumpyExporter(Exporter):
 exporter(NumpyExporter)
 
 #@exporter
-class PSFExporter(Exporter):
-    extension = '*.psf'
-    descr = 'PYME psf data - .psf'
+# Dropped the PSFExporter as it is deprecated and should not be used. Users are advised to save PSFs as .tif files instead.
+# retaining read support for now.
+# class PSFExporter(Exporter):
+#     extension = '*.psf'
+#     descr = 'PYME psf data - .psf'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        #numpy.save(outFile, data[xslice, yslice, zslice])
-        warnings.warn('The .psf format is deprecated. Save PSFs as .tif instead')
+#     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+#         #numpy.save(outFile, data[xslice, yslice, zslice])
+#         warnings.warn('The .psf format is deprecated. Save PSFs as .tif instead')
         
-        from six.moves import cPickle
+#         from six.moves import cPickle
             
-        fid = open(outFile, 'wb')
-        cPickle.dump((data[xslice, yslice, zslice], metadata['voxelsize']), fid, 2)
-        fid.close()
+#         fid = open(outFile, 'wb')
+#         cPickle.dump((data[xslice, yslice, zslice], metadata['voxelsize']), fid, 2)
+#         fid.close()
 
-        if progressCallback:
-            try:
-                progressCallback(100, 100)
-            except:
-                pass
+#         if progressCallback:
+#             try:
+#                 progressCallback(100, 100)
+#             except:
+#                 pass
 
-exporter(PSFExporter)
+# exporter(PSFExporter)
 
 #@exporter
 class TxtExporter(Exporter):

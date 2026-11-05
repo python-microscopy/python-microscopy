@@ -5,6 +5,16 @@ import numpy as np
 
 
 class PointSource(HasTraits):
+    """
+    Base class for point sources. Subclasses can either correspond to a single object, in which case points()
+    should yield a single array of shape (N, 4) where the the columns are x, y, z, channel,
+    or to a collection of objects, in which case points() should yield multiple arrays of shape (N, 4).
+    
+    Subclasses should either implement getPoints() 
+    to return a tuple of (x, y, z) coordinate arrays (if a single object), or override points()
+    if they are a collection of objects.
+     
+    """
     def refresh_choices(self):
         pass
 
@@ -13,28 +23,28 @@ class PointSource(HasTraits):
         c = np.zeros_like(x)
         yield np.array([x,y,z,c], 'f').T
 
-class Group(HasTraits):
-    generators = List(Instance(HasTraits))
+class Group(PointSource):
+    generators = List(Instance(PointSource))
 
     def points(self):
         for g in self.generators:
             for pts in g.points():
                 yield pts
 
-class AssignChannel(HasTraits):
+class AssignChannel(PointSource):
     channel = Int(0)
-    generator = Instance(HasTraits)
+    generator = Instance(PointSource)
 
     def points(self):
         for pts in self.generator.points():
             pts[:,3] = self.channel
             yield pts
 
-class Shift(HasTraits):
+class Shift(PointSource):
     dx = Float(0)
     dy = Float(0)
 
-    generator = Instance(HasTraits)
+    generator = Instance(PointSource)
 
     def points(self):
         for pts in self.generator.points():
@@ -42,10 +52,10 @@ class Shift(HasTraits):
             pts[:,1] += self.dy
             yield pts
 
-class RandomShift(HasTraits):
+class RandomShift(PointSource):
     magnitude = Float(1000)
 
-    generator = Instance(HasTraits)
+    generator = Instance(PointSource)
 
     def points(self):
         dx, dy = np.random.uniform(-self.magnitude, self.magnitude, 2)
@@ -54,10 +64,10 @@ class RandomShift(HasTraits):
             pts[:,1] += dy
             yield pts
 
-class RandomDistribution(HasTraits):
+class RandomDistribution(PointSource):
     n_instances = Int(1)
     region_size = Float(5000)
-    generator = Instance(HasTraits)
+    generator = Instance(PointSource)
     # force one of the points to be at the origin (dirty hack to make sure there is a structure present in the simulator at startup)
     force_at_origin = Bool(False)
 

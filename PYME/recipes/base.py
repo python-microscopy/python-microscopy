@@ -380,7 +380,7 @@ class ModuleBase(HasStrictTraits):
         If a module has a single input, you can provide the input directly as the first and only argument. If the module
         supports multiple inputs, they must be specified using keyword arguments.
         
-        NOTE: Use the trait names as keys.
+        NOTE: Use the trait names as keys. Note the only valid keys are the names of traits of type Input. 
         
         If the module has only one output, using apply_simple() will automatically pull it out of the namespace and return it.
         
@@ -1202,7 +1202,7 @@ class Clip(Filter):
     """Clip an image to a given range"""
     
     min = Float(0)
-    max = Float(np.finfo(np.float32).max)
+    max = Float(float(np.finfo(np.float32).max))
     
     def applyFilter(self, data, chanNum, i, image0):
         return np.clip(data, self.min, self.max)

@@ -226,6 +226,10 @@ class ImageStack(object):
         self.events = events  #events
 
         self.queueURI = queueURI
+
+        # label image. This is purely to support legacy code stores a label image in the .labels attribute of the image. This is not a good design, but we keep it for backwards compatibility
+        # Changing .labels to a property so that we can raise a deprecation warning when it is used.
+        self._labels = None
         
         if filename is not None and os.path.exists(filename): # is a real filename on disk, rather than a schemified one e.g. pyme-cluster://
             # make the filename fully resolved rather than relative to the directory we launched from (if we launched with a partial filename)
@@ -276,6 +280,17 @@ class ImageStack(object):
 
         #add ourselves to the list of open images      
         openImages[self.filename] = self
+
+    @property
+    def labels(self):
+        warnings.warn(PYMEDeprecationWarning('The .labels attribute is deprecated and will be removed in a future version. Use recipes instead.'), stacklevel=2)
+        return self._labels
+
+    @labels.setter
+    def labels(self, value):
+        warnings.warn(PYMEDeprecationWarning('The .labels attribute is deprecated and will be removed in a future version. Use recipes instead.'), stacklevel=2)
+        assert isinstance(value, ImageStack), 'labels must be an ImageStack'
+        self._labels = value
 
     def SetData(self, data):
         """
