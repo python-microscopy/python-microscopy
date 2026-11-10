@@ -57,7 +57,7 @@ def check_mapexists(mdh, type='dark', fill=True):
     mapfn = map_filename(mdh, type)
 
     # find and record calibration paths
-    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
+    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'], create=False), mapfn)
     cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
 
     try:
