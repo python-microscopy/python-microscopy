@@ -325,6 +325,10 @@ class ProcessColour(ModuleBase):
     
     ratios_from_metadata = Bool(True)
 
+    threshold_p_dye = Float(0.1)
+    threshold_p_other = Float(0.1)
+    threshold_p_background = Float(0.1)
+
     def _get_dye_ratios_from_metadata(self, mdh):
         from PYME.LMVis import dyeRatios
         
@@ -390,6 +394,23 @@ class ProcessColour(ModuleBase):
     #     #cached_output.mdh = output.mdh
     #     namespace[self.output] = cached_output
 
+    def _index(self, data, channel):
+        p_dye = data['p_%s' % channel]
+        p_other = 0 * p_dye
+        p_tot = self.threshold_p_background * data['ColourNorm']
+
+        for structure in self.species_ratios.keys():
+            p_struct = data['p_%s' % structure]
+            p_tot += p_struct
+
+            if not structure == channel:
+                p_other = np.maximum(p_other, p_struct)
+        
+        p_dye /= p_tot
+        p_other /= p_tot
+
+        return (p_dye > self.threshold_p_dye) * (p_other < self.threshold_p_other)
+    
     def run(self, input):
         mdh = input.mdh
         
@@ -411,21 +432,36 @@ class ProcessColour(ModuleBase):
                 if not ratio is None:
                     output.setMapping('p_%s' % structure,
                                             'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+                    
+            # Create a chanel ID column
+            chanID = -1*np.ones_like(output['gFrac'], dtype='i4')
+            
+            for i, structure in enumerate(self.species_ratios.keys()):
+                chanID[self._index(output, structure)] = i
+
+            output.addColumn('channel_id', chanID)
         else:
             if 'probe' in output.keys():
                 #non-ratiometric (i.e. sequential) colour
                 #color channel is given in 'probe' column
                 output.setMapping('ColourNorm', '1.0 + 0*probe')
+                output.setMapping('channel_id', 'probe')
                 
                 for i in range(int(output['probe'].min()), int(output['probe'].max() + 1)):
                     output.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
             
             nSeqCols = mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
             if nSeqCols > 1:
+                t = output['t']
+                chanID = -1*np.ones_like(output['gFrac'], dtype='i4')
                 for i in range(nSeqCols):
                     output.setMapping('ColourNorm', '1.0 + 0*t')
                     cr = mdh['Protocol.ColorRange%d' % i]
+                    chanID[(t >= cr[0])*(t < cr[1])] = i
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                
+                output.addColumn('channel_id', chanID)
+                
                     
         cached_output = tabular.CachingResultsFilter(output)
         #cached_output.mdh = output.mdh
