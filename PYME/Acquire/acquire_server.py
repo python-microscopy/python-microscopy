@@ -203,10 +203,16 @@ class AcquireHTTPServerMixin(webframework.APIHTTPServer, PYMEAcquireServerMixin)
         webui.set_server(self)
         
         self._main_page = webui.load_template('PYMEAcquire.html')
+        self._login_page = webui.load_template('login.html')
         
     @webframework.register_endpoint('/do_login')
     def do_login(self, email, password, on_success='/'):
+        """
+        JSON-based login endpoint that returns authentication token
+        Client is responsible for setting the cookie
+        """
         from PYME.util import authenticate
+        import json
         
         try:
             auth = authenticate.get_token(email, password)
@@ -215,28 +221,58 @@ class AcquireHTTPServerMixin(webframework.APIHTTPServer, PYMEAcquireServerMixin)
             auth = None
             
         if auth:
-            return webframework.HTTPRedirectResponse(on_success, headers=[('Set-Cookie', 'auth=%s; path=/; HttpOnly' % auth)])
+            return json.dumps({
+                'success': True,
+                'token': auth,
+                'user': email
+            })
         else:
-            return webframework.HTTPRedirectResponse('/login?reason="failure"&on_success="%s"'%on_success, headers=[('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
-     
-    @webframework.register_endpoint('/login', mimetype='text/html')
-    def login(self, reason='', on_success='/'):
-        from jinja2 import Template
-        
-        return Template(webui.load_template('login.html')).render(reason=reason, on_success=on_success)
-
+            return json.dumps({
+                'success': False,
+                'error': 'Invalid email or password'
+            })
+    
     @webframework.register_endpoint('/logout')
-    def logout(self, on_success='/'):
-        return webframework.HTTPRedirectResponse(on_success, headers=[
-            ('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
-
-    @webframework.register_endpoint('/', mimetype='text/html', authenticate=True)
-    def main_page(self, authenticated_as=None):
-        #return self._main_page
-        from jinja2 import Template
-        
-        print('authenticated_as=', authenticated_as)
-        return Template(webui.load_template('PYMEAcquire.html')).render(authenticated_as=authenticated_as)
+    def logout(self):
+        """
+        JSON-based logout endpoint
+        Client is responsible for clearing the cookie
+        """
+        import json
+        return json.dumps({
+            'success': True,
+            'message': 'Logged out successfully'
+        })
+    
+    @webframework.register_endpoint('/api/user', authenticate=True)
+    def get_user_info(self, authenticated_as=None):
+        """
+        Return current user info if authenticated
+        """
+        import json
+        if authenticated_as:
+            return json.dumps({
+                'authenticated': True,
+                'user': authenticated_as
+            })
+        else:
+            return json.dumps({
+                'authenticated': False
+            })
+     
+    @webframework.register_endpoint('/login.html', mimetype='text/html')
+    def login_page(self):
+        """
+        Serve static login HTML
+        """
+        return self._login_page
+    
+    @webframework.register_endpoint('/', mimetype='text/html')
+    def main_page(self):
+        """
+        Serve static HTML - authentication is now handled client-side
+        """
+        return webui.load_template('PYMEAcquire.html')
         
     def run(self):
         self._poll_thread = threading.Thread(target=self.main_loop)
