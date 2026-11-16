@@ -10,6 +10,9 @@ def get_offtime_cdf(frame_num, envelope='upper'):
     #just take the non-zero gaps and sort to give x values of CDF
     dt = np.sort(dt[dt>0])
     
+    if len(dt) == 0:
+        raise ValueError('No dark times found - need at least two binding events separated by a blank frame')
+
     #y-values of CDF
     cum_frac = np.linspace(0,1-1.0/len(dt), len(dt))
     
