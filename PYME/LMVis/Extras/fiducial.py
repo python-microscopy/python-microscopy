@@ -214,7 +214,7 @@ def drift_auto_corr(visFr):
     if m.configure_traits(kind='modal'):
         recipe.add_modules_and_execute([m,])
         
-        pipeline.selectDataSource('corrected_localizations')
+        pipeline.selectDataSource(m.outputName)
         #visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 
