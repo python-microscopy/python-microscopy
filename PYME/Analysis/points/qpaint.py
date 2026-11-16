@@ -24,6 +24,40 @@ def get_offtime_cdf(frame_num, envelope='upper'):
     
     return x_vals, y_vals
 
+def _start_params(t, c, model='q2'):
+    """
+    Data-derived start parameters for the dark-time fits.
+
+    estimate the time constant from the median of the empirical CDF (for a single exponential, ``median = t1*ln(2)``).
+
+    Parameters
+    ----------
+    t, c : ndarray
+        Dark times (frames) and cumulative fraction, as returned by
+        :func:`get_offtime_cdf`.
+    model : {'q2', 'q1'}
+        Which model the start parameters are for.
+
+    Returns
+    -------
+    ndarray
+        Start parameters, already square-rooted for the models' internal
+        parameterisation.
+    
+    Notes
+    -----
+    Uses the crossing of 0.5 in the empirical CDF to estimate the median dark time
+    """
+    t1 = max(1., np.interp(0.5, c, t) / np.log(2.))
+
+    if model == 'q2':
+        # fast component will be lost in the median, so guess
+        # its an order of magnitude faster
+        return np.sqrt([0.5, max(1., 0.1 * t1), t1])
+
+    return np.sqrt([t1, ])
+
+
 def qpaint2mod(p, t):
     a, t1, t2 = p**2 #squared to enforce positivity
     
@@ -31,6 +65,16 @@ def qpaint2mod(p, t):
 
 
 def qpaint1mod(p, t):
+    """
+    Single-component dark-time CDF, ``1 - exp(-t/t1)``.
+
+    Parameters
+    ----------
+    p : array_like
+        ``sqrt([t1,])``. Gets squared in this function to enforce positivity of time constant.
+    t : array_like
+        Dark times, in frames.
+    """
     t1 = p ** 2 #squared to enforce positivity
     
     return 1 - np.exp(-t / t1)
@@ -40,10 +84,10 @@ def fit(frame_nums, model='q2'):
     t, c = get_offtime_cdf(frame_nums)
 
     if (model == 'q2'):
-        res = fh.FitModel(qpaint2mod, np.sqrt([0.5, 3.5, 500.]), c, t)
+        res = fh.FitModel(qpaint2mod, _start_params(t, c, 'q2'), c, t)
     
     else:
-        res = fh.FitModel(qpaint1mod, np.sqrt([500., ]), c, t)
+        res = fh.FitModel(qpaint1mod, _start_params(t, c, 'q1'), c, t)
     
     return res[0]**2
 
@@ -61,11 +105,11 @@ def plot_and_fit(frame_nums, model='q2'):
     t_ = np.logspace(0, np.log10(t.max()))
     
     if (model == 'q2'):
-        res = fh.FitModel(qpaint2mod, np.sqrt([0.5, 3.5, 500.]), c, t)
+        res = fh.FitModel(qpaint2mod, _start_params(t, c, 'q2'), c, t)
         
         f = qpaint2mod(res[0], t_)
     else:
-        res = fh.FitModel(qpaint1mod, np.sqrt([500.,]), c, t)
+        res = fh.FitModel(qpaint1mod, _start_params(t, c, 'q1'), c, t)
         
         f = qpaint1mod(res[0], t_)
     
