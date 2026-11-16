@@ -156,7 +156,7 @@ class QPObjectSegmenter:
             maxtd = dtg.max()
 
             # generate histograms 2nd way
-            binedges = 0.5+np.arange(0,maxtd)
+            binedges = 0.5+np.arange(0,maxtd+1) # last edge at maxtd+0.5 so the longest dark time is included
             binctrs = 0.5*(binedges[0:-1]+binedges[1:])
             h,be2 = np.histogram(dtg,bins=binedges)
             hc = np.cumsum(h)
@@ -167,9 +167,9 @@ class QPObjectSegmenter:
         popth,pcovh,popt,pcov = (None,None,None,None)
         if nts > NTMIN:
             popth,pcovh,infodicth,errmsgh,ierrh = curve_fit(cumuexpfit,binctrsg,hcg, p0=(300.0),full_output=True)
-            chisqredh = ((hcg - infodicth['fvec'])**2).sum()/(hcg.shape[0]-1)
+            chisqredh = (infodicth['fvec']**2).sum()/(hcg.shape[0]-1)
             popt,pcov,infodict,errmsg,ierr = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0),full_output=True)
-            chisqred = ((cumuy - infodict['fvec'])**2).sum()/(nts-1)
+            chisqred = (infodict['fvec']**2).sum()/(nts-1)
 
 
             # plot data and fitted curves
@@ -180,12 +180,15 @@ class QPObjectSegmenter:
             plt.plot(binctrs,hc/float(nts),'o')
             plt.plot(binctrs,cumuexpfit(binctrs,popth[0]))
             plt.ylim(-0.2,1.2)
+            plt.ylabel('Cumulative fraction')
             plt.subplot(212)
             plt.semilogx(cumux,cumuy,'o')
             plt.semilogx(cumux,cumuexpfit(cumux,popt[0]))
             plt.semilogx(binctrs,hc/float(nts),'o')
             plt.semilogx(binctrs,cumuexpfit(binctrs,popth[0]))
             plt.ylim(-0.2,1.2)
+            plt.xlabel('Dark time [frames]')
+            plt.ylabel('Cumulative fraction')
             plt.show()
             
             outstr = StringIO()

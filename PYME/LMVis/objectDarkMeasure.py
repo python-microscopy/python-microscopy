@@ -31,7 +31,7 @@ def fitDarktimes(t):
         maxtd = dtg.max()
         
         # generate histograms 2nd way
-        binedges = 0.5+np.arange(0,maxtd)
+        binedges = 0.5+np.arange(0,maxtd+1) # last edge at maxtd+0.5 so the longest dark time is included
         binctrs = 0.5*(binedges[0:-1]+binedges[1:])
         h,be2 = np.histogram(dtg,bins=binedges)
         hc = np.cumsum(h)
@@ -45,19 +45,19 @@ def fitDarktimes(t):
         except:
             success = False
         else:
-            chisqredh = ((hcg - infodicth['fvec'])**2).sum()/(hcg.shape[0]-1)
+            chisqredh = (infodicth['fvec']**2).sum()/(hcg.shape[0]-1)
         try:
             popt,pcov,infodict,errmsg,ierr = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0),full_output=True)
         except:
             success = False
         else:
-            chisqred = ((cumuy - infodict['fvec'])**2).sum()/(nts-1)
+            chisqred = (infodict['fvec']**2).sum()/(nts-1)
 
         if success:
             analysis = {
                 'NDarktimes' : nts,
-                'tau1' : [popt[0],np.sqrt(pcov[0][0]),chisqredh],
-                'tau2' : [popth[0],np.sqrt(pcovh[0][0]),chisqred]
+                'tau1' : [popt[0],np.sqrt(pcov[0][0]),chisqred],
+                'tau2' : [popth[0],np.sqrt(pcovh[0][0]),chisqredh]
             }
         else:
             analysis = notimes(nts)
