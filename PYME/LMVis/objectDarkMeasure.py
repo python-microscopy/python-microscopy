@@ -56,8 +56,8 @@ def fitDarktimes(t):
         if success:
             analysis = {
                 'NDarktimes' : nts,
-                'tau1' : [popt[0],np.sqrt(pcov[0][0]),chisqredh],
-                'tau2' : [popth[0],np.sqrt(pcovh[0][0]),chisqred]
+                'tau1' : [popt[0],np.sqrt(pcov[0][0]),chisqred],
+                'tau2' : [popth[0],np.sqrt(pcovh[0][0]),chisqredh]
             }
         else:
             analysis = notimes(nts)
