@@ -167,9 +167,9 @@ class QPObjectSegmenter:
         popth,pcovh,popt,pcov = (None,None,None,None)
         if nts > NTMIN:
             popth,pcovh,infodicth,errmsgh,ierrh = curve_fit(cumuexpfit,binctrsg,hcg, p0=(300.0),full_output=True)
-            chisqredh = ((hcg - infodicth['fvec'])**2).sum()/(hcg.shape[0]-1)
+            chisqredh = (infodicth['fvec']**2).sum()/(hcg.shape[0]-1)
             popt,pcov,infodict,errmsg,ierr = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0),full_output=True)
-            chisqred = ((cumuy - infodict['fvec'])**2).sum()/(nts-1)
+            chisqred = (infodict['fvec']**2).sum()/(nts-1)
 
 
             # plot data and fitted curves

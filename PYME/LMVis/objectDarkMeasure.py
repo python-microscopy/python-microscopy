@@ -45,13 +45,13 @@ def fitDarktimes(t):
         except:
             success = False
         else:
-            chisqredh = ((hcg - infodicth['fvec'])**2).sum()/(hcg.shape[0]-1)
+            chisqredh = (infodicth['fvec']**2).sum()/(hcg.shape[0]-1)
         try:
             popt,pcov,infodict,errmsg,ierr = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0),full_output=True)
         except:
             success = False
         else:
-            chisqred = ((cumuy - infodict['fvec'])**2).sum()/(nts-1)
+            chisqred = (infodict['fvec']**2).sum()/(nts-1)
 
         if success:
             analysis = {
