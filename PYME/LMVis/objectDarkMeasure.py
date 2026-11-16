@@ -31,7 +31,7 @@ def fitDarktimes(t):
         maxtd = dtg.max()
         
         # generate histograms 2nd way
-        binedges = 0.5+np.arange(0,maxtd)
+        binedges = 0.5+np.arange(0,maxtd+1) # last edge at maxtd+0.5 so the longest dark time is included
         binctrs = 0.5*(binedges[0:-1]+binedges[1:])
         h,be2 = np.histogram(dtg,bins=binedges)
         hc = np.cumsum(h)
