@@ -29,6 +29,7 @@ Lasers / Light Sources
 * Omicron Phoxx lasers
 * Prior Lumen arclamp
 * Oriel Cornerstone arclamp and monochrometer
+* PicoQuant Taiko Pulsed Diode Lasers
 
 Filters / Shutters
 ==================
