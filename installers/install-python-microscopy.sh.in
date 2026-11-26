@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Linux/Mac installer for PYME. Also serves as the Mac installer pending a native .app.
+# Usage: install-python-microscopy.sh [--dest <path>]   (default: ~/PYME)
+#
+# Context A (CI/dev): uv is expected to be in PATH already.
+# Context B (end-user): uv is bootstrapped via astral.sh if not found.
+set -euo pipefail
+
+# --- Configuration ---
+TARGET_PYTHON=3.13
+ENTRY_POINTS=(PYMEAcquire PYMEImage PYMEVis PYMEClusterOfOne)
+DEFAULT_DEST="$HOME/PYME"
+
+DEST="$DEFAULT_DEST"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dest)   DEST="$2"; shift 2 ;;
+        --dest=*) DEST="${1#--dest=}"; shift ;;
+        -h|--help)
+            echo "Usage: $0 [--dest <path>]"
+            echo "  Installs PYME into a self-contained directory using uv."
+            echo "  Default: $DEFAULT_DEST"
+            exit 0 ;;
+        *) echo "Unknown argument: $1 (run '$0 --help' for usage)" >&2; exit 1 ;;
+    esac
+done
+
+DEST="${DEST/#\~/$HOME}"
+
+if [[ -d "$DEST" ]]; then
+    DEST="$(cd "$DEST" && pwd -P)"   # absolute path, so the warning shows exactly what will be wiped
+    if [[ "$DEST" == "/" || "$DEST" == "$HOME" ]]; then
+        echo "ERROR: refusing to wipe '$DEST'; choose a dedicated directory." >&2
+        exit 1
+    fi
+    echo "WARNING: '$DEST' already exists."
+    echo "         Continuing will DELETE EVERYTHING inside this directory."
+    # Read from the terminal so the prompt also works when the script is piped into bash.
+    read -r -p "Type the full word 'yes' to overwrite: " REPLY < /dev/tty || REPLY=""
+    if [[ "$REPLY" != "yes" ]]; then
+        echo "Aborted; nothing was changed."
+        exit 1
+    fi
+    # The glob patterns cover dotfiles, and the directory itself is kept.
+    find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+fi
+
+echo "==> Installing PYME to: $DEST"
+mkdir -p "$DEST"
+
+# --- Ensure uv is available ---
+if ! command -v uv &>/dev/null; then
+    echo "==> uv not found; downloading via astral.sh..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+    if ! command -v uv &>/dev/null; then
+        echo "ERROR: uv installation failed or installed to an unexpected location." >&2
+        exit 1
+    fi
+fi
+
+# Keep the managed runtime in uv's per-user data directory, not on PATH.
+# The venv refers to this stable location so the DEST directory can be moved.
+export UV_PYTHON_INSTALL_BIN=0
+
+echo "==> Installing managed Python $TARGET_PYTHON..."
+uv python install "$TARGET_PYTHON"
+
+echo "==> Creating relocatable virtual environment..."
+uv venv --relocatable --managed-python --python "$TARGET_PYTHON" "$DEST/venv"
+
+TMP_REQS=$(mktemp)
+trap 'rm -f "$TMP_REQS"' EXIT
+
+cat << 'REQS_EOF' > "$TMP_REQS"
+___EMBEDDED_REQUIREMENTS_PLACEHOLDER___
+REQS_EOF
+
+echo "==> Syncing frozen package set..."
+uv pip sync "$TMP_REQS" --python "$DEST/venv/bin/python" --require-hashes
+
+# --- Top-level entry point symlinks ---
+for ep in "${ENTRY_POINTS[@]}"; do
+    ln -sf "venv/bin/$ep" "$DEST/$ep"
+done
+
+# --- Activated-shell helper ---
+cat > "$DEST/pyme-shell" <<'SHELL_SCRIPT'
+#!/usr/bin/env bash
+PYME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$PYME_DIR/venv/bin/activate"
+exec "${SHELL:-bash}"
+SHELL_SCRIPT
+chmod +x "$DEST/pyme-shell"
+
+echo ""
+echo "==> Done."
+echo "    Entry points: ${ENTRY_POINTS[*]}"
+echo "    Add to PATH:       export PATH=\"$DEST:\$PATH\""
+echo "    Activated shell:   $DEST/pyme-shell"

@@ -19,7 +19,7 @@ def show_about_dlg(component_name='python-microscopy', desc_addendum=''):
     dlg.SetName(component_name)
     dlg.SetVersion(detailed_version())
     dlg.SetDescription(desc)
-    dlg.SetCopyright("(C)2009-2021")
+    dlg.SetCopyright("(C)2009-2026")
     dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
     #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
     # TODO: should this be the issues page or the website

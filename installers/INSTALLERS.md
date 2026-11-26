@@ -3,8 +3,9 @@ This folder contains the code to create installers for windows and mac.
 
 
 ## Commonalities
-- A script (or potentiall similar bash/powershell/bat scritps) to construct a self contained folder with python and PYME.
-- the script should use uv to create an enviroment and install the current pip PYME package in it, relying on that package to determine any additional dependencies
+- A script (or potentiall similar bash/powershell/bat scritps) to construct a folder with PYME; the managed Python runtime is kept in uv's per-user data directory so the PYME folder can be moved on the same machine.
+- the Linux/macOS installer is generated from `install-python-microscopy.sh.in` by `build-install-python-microscopy.sh`; the build compiles a universal, hash-locked requirements set that is embedded in the installer
+- the generated installer should use uv to create a relocatable environment and sync the embedded requirements, rather than resolving the latest package set on each install
 - the script should accept a parameter for the output folder, defaulting to creating a `PYME` directory in the users home directory.
 - download (curl) uv if not already installed.
 - The script should idealy create executable top level aliases to PYMEAcquire, PYMEImage, PYMEVis and PYMEClusterOfOne (as defined in the pyproject.toml scripts section). The script should also create a alias activating venv for console use.

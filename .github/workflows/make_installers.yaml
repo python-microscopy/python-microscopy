@@ -54,3 +54,37 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.version }}
           files: installers/windows/Output/PYME-*-setup.exe
+
+  unix:
+    runs-on: macos-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build install script
+        run: bash installers/build-install-python-microscopy.sh
+
+      - name: Get package version
+        id: version
+        run: |
+          v=$(grep -m1 -oE '^python-microscopy==[^ ]+' installers/install-python-microscopy.sh | cut -d= -f3)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PYME-${{ steps.version.outputs.version }}-unix-install-script
+          path: installers/install-python-microscopy.sh
+
+      - name: Attach to release
+        if: github.event_name == 'workflow_run'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: installers/install-python-microscopy.sh
